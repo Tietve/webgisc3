@@ -83,10 +83,10 @@ npm run dev
 
 ## 📚 Hướng Dẫn Chi Tiết
 
-- **[Hướng Dẫn Cho Người Mới](HUONG_DAN_CHO_NGUOI_MOI.md)** ⭐ - Bắt đầu từ đầu, chi tiết nhất
-- **[Các Loại Geometry GIS](HUONG_DAN_CAC_LOAI_GEOMETRY.md)** - Point, Line, Polygon
-- **[Kết Nối pgAdmin](HUONG_DAN_KET_NOI_PGADMIN.md)** - Quản lý database
-- **[Thêm Dữ Liệu GIS Nhanh](THEM_DU_LIEU_GIS_NHANH.md)** - SQL examples
+- **[Hướng Dẫn Cho Người Mới](docs/HUONG_DAN_CHẠY.md)** ⭐ - Bắt đầu từ đầu, chi tiết nhất
+- **[Các Loại Geometry GIS](docs/HUONG_DAN_CAC_LOAI_GEOMETRY.md)** - Point, Line, Polygon
+- **[Kết Nối pgAdmin](docs/HUONG_DAN_KET_NOI_PGADMIN.md)** - Quản lý database
+- **[Thêm Dữ Liệu GIS Nhanh](docs/THEM_DU_LIEU_GIS_NHANH.md)** - SQL examples
 
 ---
 
