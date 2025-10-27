@@ -1,331 +1,330 @@
-# WebGIS Educational Platform - Backend
-
-Backend API cho nền tảng WebGIS giáo dục chuyên nghiệp, được xây dựng với Django, GeoDjango và PostgreSQL/PostGIS.
-
-## 🚀 Tính năng chính
-
-- **Quản lý người dùng**: Hệ thống xác thực JWT với vai trò giáo viên/học sinh
-- **Lớp học**: Quản lý lớp học, mã tham gia, danh sách học sinh
-- **Bài giảng tương tác**: Hệ thống bài giảng với các bước và hành động bản đồ
-- **Kiểm tra đánh giá**: Tạo và nộp bài kiểm tra với tự động chấm điểm
-- **Dữ liệu GIS**: Quản lý lớp bản đồ và dữ liệu không gian địa lý (GeoJSON)
-- **Công cụ phân tích**: Hệ thống công cụ không gian địa lý động (buffer, intersect, etc.)
-- **API Documentation**: Tài liệu API tự động với Swagger UI
-
-## 📋 Yêu cầu hệ thống
-
-- Docker & Docker Compose (khuyến nghị)
-- HOẶC:
-  - Python 3.10+
-  - PostgreSQL 14+ với PostGIS 3.x
-  - GDAL 3.x
-
-## 🛠️ Cài đặt
-
-### Phương pháp 1: Sử dụng Docker (Khuyến nghị)
-
-1. **Clone repository**
-```bash
-cd D:\Webgis
-```
-
-2. **Tạo file .env**
-```bash
-cp .env.example .env
-```
-
-Chỉnh sửa `.env` nếu cần thiết.
-
-3. **Khởi động services**
-```bash
-docker-compose up --build
-```
-
-4. **Chạy migrations (trong terminal mới)**
-```bash
-docker-compose exec web python manage.py migrate
-```
-
-5. **Tạo dữ liệu mẫu**
-```bash
-docker-compose exec web python manage.py seed_data
-```
-
-6. **Truy cập ứng dụng**
-- API: http://localhost:8000/
-- Admin: http://localhost:8000/admin/
-- Swagger UI: http://localhost:8000/api/schema/swagger-ui/
-
-### Phương pháp 2: Cài đặt thủ công
-
-1. **Cài đặt PostgreSQL/PostGIS**
-
-2. **Tạo database**
-```sql
-CREATE DATABASE webgis_db;
-CREATE USER webgis_user WITH PASSWORD 'webgis_password';
-ALTER ROLE webgis_user SET client_encoding TO 'utf8';
-ALTER ROLE webgis_user SET default_transaction_isolation TO 'read committed';
-ALTER ROLE webgis_user SET timezone TO 'UTC';
-GRANT ALL PRIVILEGES ON DATABASE webgis_db TO webgis_user;
-
--- Enable PostGIS
-\c webgis_db
-CREATE EXTENSION postgis;
-```
-
-3. **Cài đặt Python dependencies**
-```bash
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-4. **Cấu hình environment variables**
-```bash
-export DJANGO_SETTINGS_MODULE=config.settings.development
-export DB_HOST=localhost
-# ... other variables from .env.example
-```
-
-5. **Chạy migrations**
-```bash
-python manage.py migrate
-```
-
-6. **Tạo dữ liệu mẫu**
-```bash
-python manage.py seed_data
-```
-
-7. **Chạy development server**
-```bash
-python manage.py runserver
-```
-
-## 👤 Tài khoản mẫu
-
-Sau khi chạy `seed_data`, các tài khoản sau sẽ được tạo:
-
-| Email | Password | Role | Description |
-|-------|----------|------|-------------|
-| admin@webgis.com | admin123 | Superuser | Admin panel access |
-| teacher@webgis.com | teacher123 | Teacher | Sample teacher |
-| student1@webgis.com | student123 | Student | Sample student 1 |
-| student2@webgis.com | student123 | Student | Sample student 2 |
-
-## 📚 API Documentation
-
-### Endpoints chính
-
-#### Authentication
-- `POST /api/v1/auth/register/` - Đăng ký tài khoản
-- `POST /api/v1/auth/token/` - Lấy JWT token
-- `POST /api/v1/auth/token/refresh/` - Refresh token
-- `GET /api/v1/auth/profile/` - Lấy thông tin user
-
-#### Classrooms
-- `GET /api/v1/classrooms/` - Danh sách lớp học
-- `POST /api/v1/classrooms/` - Tạo lớp học (teacher)
-- `GET /api/v1/classrooms/{id}/` - Chi tiết lớp học
-- `GET /api/v1/classrooms/{id}/students/` - Danh sách học sinh
-- `POST /api/v1/classrooms/enrollments/join/` - Tham gia lớp (student)
-
-#### Lessons
-- `GET /api/v1/lessons/` - Danh sách bài giảng
-- `GET /api/v1/lessons/{id}/` - Chi tiết bài giảng với steps và actions
-
-#### Quizzes
-- `GET /api/v1/quizzes/` - Danh sách bài kiểm tra
-- `GET /api/v1/quizzes/{id}/` - Chi tiết bài kiểm tra
-- `GET /api/v1/quizzes/classrooms/{class_id}/quiz_session/{quiz_id}/` - Dữ liệu quiz session
-- `POST /api/v1/quizzes/quiz_submissions/` - Nộp bài kiểm tra
-
-#### GIS Data
-- `GET /api/v1/layers/` - Danh sách map layers
-- `GET /api/v1/layers/{id}/` - Chi tiết layer
-- `GET /api/v1/layers/{id}/features/` - GeoJSON features (hỗ trợ bbox filter)
-
-#### Geospatial Tools
-- `POST /api/v1/tools/{tool_name}/execute/` - Thực thi công cụ phân tích
-
-**Available tools:**
-- `buffer` - Tạo vùng đệm xung quanh geometry
-- `intersect` - Tìm giao điểm giữa các geometry
-
-### Xem tài liệu đầy đủ
-
-- **Swagger UI**: http://localhost:8000/api/schema/swagger-ui/
-- **ReDoc**: http://localhost:8000/api/schema/redoc/
-
-## 🗄️ Cấu trúc Database
-
-### Core Tables
-- `users` - User accounts (UUID, email, role)
-- `classrooms` - Classrooms managed by teachers
-- `enrollments` - Student-classroom relationships
-- `map_layers` - GIS layer metadata
-- `vietnam_provinces` - Sample PostGIS table with province geometries
-
-### Lessons
-- `lessons` - Interactive lessons
-- `lesson_steps` - Steps in each lesson
-- `map_actions` - Map actions triggered by steps
-
-### Quizzes
-- `quizzes` - Quiz definitions
-- `quiz_questions` - Questions in quizzes
-- `quiz_answers` - Multiple choice answers
-- `quiz_submissions` - Student submissions with scores
-
-## 🧪 Ví dụ API Requests
-
-### Đăng ký và Login
-
-```bash
-# Register
-curl -X POST http://localhost:8000/api/v1/auth/register/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "newstudent@example.com",
-    "password": "securepass123",
-    "password_confirm": "securepass123",
-    "role": "student"
-  }'
-
-# Login
-curl -X POST http://localhost:8000/api/v1/auth/token/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "student1@webgis.com",
-    "password": "student123"
-  }'
-```
-
-### Lấy GeoJSON Features
-
-```bash
-curl -X GET "http://localhost:8000/api/v1/layers/1/features/?bbox=105,10,108,22" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-### Chạy Buffer Tool
-
-```bash
-curl -X POST http://localhost:8000/api/v1/tools/buffer/execute/ \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input_geojson": {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [106.0, 16.0]
-      }
-    },
-    "parameters": {
-      "distance": 1000,
-      "units": "meters"
-    }
-  }'
-```
-
-## 🔧 Development
-
-### Chạy migrations
-
-```bash
-docker-compose exec web python manage.py makemigrations
-docker-compose exec web python manage.py migrate
-```
-
-### Tạo superuser
-
-```bash
-docker-compose exec web python manage.py createsuperuser
-```
-
-### Truy cập Django shell
-
-```bash
-docker-compose exec web python manage.py shell
-```
-
-### Chạy tests (khi có)
-
-```bash
-docker-compose exec web python manage.py test
-```
-
-## 📁 Cấu trúc Project
-
-```
-webgis_backend/
-├── config/                      # Django project settings
-│   ├── settings/
-│   │   ├── base.py             # Base settings
-│   │   ├── development.py      # Development settings
-│   │   └── production.py       # Production settings
-│   ├── urls.py                 # Root URL configuration
-│   └── wsgi.py
-├── apps/
-│   ├── core/                   # Core utilities
-│   │   ├── exceptions.py       # Custom exception handlers
-│   │   ├── pagination.py       # Pagination classes
-│   │   └── permissions.py      # Custom permissions
-│   ├── users/                  # User authentication
-│   ├── classrooms/             # Classroom management
-│   ├── lessons/                # Interactive lessons
-│   ├── gis_data/               # GIS layers and data
-│   ├── quizzes/                # Quiz system
-│   └── tools/                  # Geospatial analysis tools
-│       └── implementations/    # Tool implementations
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-└── README.md
-```
-
-## 🌐 Deployment
-
-### Production Checklist
-
-1. Thay đổi `SECRET_KEY` trong production
-2. Set `DEBUG=False`
-3. Cập nhật `ALLOWED_HOSTS`
-4. Cấu hình HTTPS
-5. Setup proper database backups
-6. Configure email backend
-7. Use production-grade WSGI server (gunicorn/uwsgi)
-
-### Environment Variables for Production
-
-```bash
-DEBUG=False
-SECRET_KEY=your-very-long-secret-key
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-DB_HOST=your-db-host
-DB_NAME=webgis_prod
-DB_USER=webgis_user
-DB_PASSWORD=strong-password
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## 📝 License
-
-This project is for educational purposes.
-
-## 📧 Support
-
-For issues and questions, please create an issue in the repository.
+# 🗺️ WebGIS Educational Platform
+
+Nền tảng giáo dục GIS tương tác với Django + PostGIS + React + Leaflet.
+
+![Platform](https://img.shields.io/badge/Platform-Docker-blue)
+![Python](https://img.shields.io/badge/Python-3.10-green)
+![Django](https://img.shields.io/badge/Django-4.2-darkgreen)
+![React](https://img.shields.io/badge/React-18-61DAFB)
+![PostGIS](https://img.shields.io/badge/PostGIS-3.3-blue)
 
 ---
 
-**Developed with ❤️ using Django, GeoDjango, and PostGIS**
+## 🎯 Giới Thiệu
+
+WebGIS Educational Platform là nền tảng học tập GIS (Hệ thống Thông tin Địa lý) tương tác, cho phép:
+
+- 📍 Quản lý và hiển thị dữ liệu không gian địa lý (Points, Lines, Polygons)
+- 🗺️ Bản đồ tương tác với Leaflet
+- 👥 Hệ thống quản lý lớp học (giáo viên/học sinh)
+- 📚 Bài giảng GIS tương tác
+- ✅ Kiểm tra và đánh giá tự động
+- 🛠️ Công cụ phân tích không gian (Buffer, Intersect...)
+
+---
+
+## 🚀 Bắt Đầu Nhanh (3 Bước)
+
+### 📥 Bước 1: Tải Code
+
+```bash
+git clone https://github.com/Tietve/webgisc3.git
+cd webgisc3
+```
+
+### 🐳 Bước 2: Chạy Docker
+
+```bash
+docker-compose up -d
+```
+
+### 💾 Bước 3: Tạo Database
+
+```bash
+docker exec webgis_backend python setup_initial_data.py
+```
+
+### 🌐 Bước 4: Chạy Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+**Xong! Truy cập:** http://localhost:3000
+
+---
+
+## 🔑 Tài Khoản Demo
+
+| Email | Password | Vai trò |
+|-------|----------|---------|
+| admin@webgis.com | admin123 | Admin |
+| teacher01@webgis.com | teacher123 | Giáo viên |
+| student01@webgis.com | student123 | Học sinh |
+
+---
+
+## 📱 Các URL Quan Trọng
+
+| Service | URL | Mô tả |
+|---------|-----|-------|
+| **Frontend** | http://localhost:3000 | Giao diện bản đồ |
+| **Backend API** | http://localhost:8080/api/v1/ | REST API |
+| **pgAdmin** | http://localhost:5050 | Quản lý database |
+| **Swagger** | http://localhost:8080/api/schema/swagger-ui/ | API docs |
+
+### pgAdmin Login:
+- Email: `admin@admin.com`
+- Password: `admin`
+
+---
+
+## 📚 Hướng Dẫn Chi Tiết
+
+- **[Hướng Dẫn Cho Người Mới](HUONG_DAN_CHO_NGUOI_MOI.md)** ⭐ - Bắt đầu từ đầu, chi tiết nhất
+- **[Các Loại Geometry GIS](HUONG_DAN_CAC_LOAI_GEOMETRY.md)** - Point, Line, Polygon
+- **[Kết Nối pgAdmin](HUONG_DAN_KET_NOI_PGADMIN.md)** - Quản lý database
+- **[Thêm Dữ Liệu GIS Nhanh](THEM_DU_LIEU_GIS_NHANH.md)** - SQL examples
+
+---
+
+## 🗺️ Cách Sử Dụng Bản Đồ
+
+1. Đăng nhập vào http://localhost:3000
+2. Vào trang **Map Viewer**
+3. Click **🗺️ Layers** để bật/tắt các lớp:
+   - **Điểm Quan Tâm** - Trường học, bệnh viện, hồ nước...
+   - **Ranh Giới** - Ranh giới hành chính
+   - **Tuyến Đường** - Tuyến xe bus, metro...
+
+---
+
+## ➕ Thêm Dữ Liệu GIS
+
+### Qua pgAdmin (Khuyến nghị):
+
+1. Mở http://localhost:5050
+2. Kết nối đến server `db`:
+   - Host: `db`
+   - Port: `5432`
+   - Database: `webgis_db`
+   - User: `webgis_user`
+   - Password: `webgis_password`
+3. Mở Query Tool và chạy SQL:
+
+**Thêm điểm trường học:**
+```sql
+INSERT INTO points_of_interest (name, category, description, geometry)
+VALUES (
+    'Trường THPT Chu Văn An',
+    'Trường học',
+    'Trường trung học phổ thông Hà Nội',
+    ST_GeomFromGeoJSON('{"type":"Point","coordinates":[105.8342,21.0278]}')
+);
+```
+
+**Thêm tuyến bus:**
+```sql
+INSERT INTO routes (name, type, length_km, geometry)
+VALUES (
+    'Tuyến Bus 01',
+    'Bus',
+    12.5,
+    ST_GeomFromGeoJSON('{
+        "type":"LineString",
+        "coordinates":[
+            [105.8234,21.0589],
+            [105.8456,21.0334],
+            [105.8527,21.0285]
+        ]
+    }')
+);
+```
+
+Xem thêm ví dụ trong file **`test_all_geometry_types.sql`**
+
+---
+
+## 🏗️ Kiến Trúc
+
+```
+┌─────────────────┐
+│   Frontend      │  React + Vite + Leaflet
+│  localhost:3000 │  Hiển thị bản đồ tương tác
+└────────┬────────┘
+         │ HTTP/REST
+┌────────▼────────┐
+│   Backend API   │  Django + GeoDjango
+│  localhost:8080 │  REST API endpoints
+└────────┬────────┘
+         │ SQL
+┌────────▼────────┐
+│   PostgreSQL    │  PostgreSQL 14 + PostGIS 3.3
+│    + PostGIS    │  Lưu trữ dữ liệu GIS
+└─────────────────┘
+```
+
+---
+
+## 📊 Database Tables
+
+| Table | Loại Geometry | Dùng Cho |
+|-------|---------------|----------|
+| `points_of_interest` | POINT | Điểm (trường, bệnh viện, hồ...) |
+| `routes` | LINESTRING | Đường nối (bus, metro...) |
+| `boundaries` | MULTIPOLYGON | Ranh giới (tỉnh, quận...) |
+| `vietnam_provinces` | MULTIPOLYGON | Ranh giới tỉnh thành VN |
+
+---
+
+## 🛑 Dừng và Khởi Động Lại
+
+### Dừng containers:
+```bash
+docker-compose stop
+```
+
+### Khởi động lại:
+```bash
+docker-compose up -d
+cd frontend && npm run dev
+```
+
+### Xóa tất cả (cẩn thận - mất dữ liệu!):
+```bash
+docker-compose down -v
+```
+
+---
+
+## 🔧 Yêu Cầu Hệ Thống
+
+- **Docker Desktop** (Windows/Mac) hoặc **Docker Engine** (Linux)
+- **Node.js 18+** (cho frontend)
+- **5GB dung lượng trống**
+- **8GB RAM** (khuyến nghị)
+
+---
+
+## 📦 Công Nghệ Sử Dụng
+
+### Backend:
+- **Django 4.2** - Python web framework
+- **GeoDjango** - GIS extension cho Django
+- **Django REST Framework** - REST API
+- **PostGIS 3.3** - Spatial database extension
+- **JWT Authentication** - Token-based auth
+
+### Frontend:
+- **React 18** - UI framework
+- **Vite** - Build tool
+- **Leaflet** - Interactive maps
+- **React Leaflet** - React bindings
+- **Axios** - HTTP client
+
+### Infrastructure:
+- **Docker** - Containerization
+- **PostgreSQL 14** - Database
+- **pgAdmin 4** - Database management
+
+---
+
+## 🧪 API Endpoints Chính
+
+### Authentication:
+- `POST /api/v1/auth/token/` - Login
+- `GET /api/v1/auth/profile/` - User profile
+
+### GIS Data:
+- `GET /api/v1/layers/` - Danh sách layers
+- `GET /api/v1/layers/1/features/` - Points (trường, hồ...)
+- `GET /api/v1/layers/2/features/` - Boundaries (ranh giới)
+- `GET /api/v1/layers/3/features/` - Routes (tuyến đường)
+
+### Classrooms:
+- `GET /api/v1/classrooms/` - Danh sách lớp
+- `POST /api/v1/classrooms/` - Tạo lớp (teacher)
+- `POST /api/v1/classrooms/enrollments/join/` - Tham gia lớp
+
+Xem đầy đủ: http://localhost:8080/api/schema/swagger-ui/
+
+---
+
+## ❓ Khắc Phục Lỗi
+
+### Docker không chạy?
+```bash
+# Kiểm tra Docker đang chạy
+docker --version
+
+# Khởi động Docker Desktop (Windows/Mac)
+# Hoặc: sudo systemctl start docker (Linux)
+```
+
+### Port bị chiếm?
+```bash
+# Kiểm tra port 5432 (PostgreSQL)
+netstat -ano | findstr :5432
+
+# Dừng PostgreSQL local nếu có
+net stop postgresql
+```
+
+### Backend không kết nối được?
+```bash
+# Xem logs
+docker logs webgis_backend
+
+# Khởi động lại
+docker restart webgis_backend
+```
+
+### Frontend không hiển thị dữ liệu?
+1. Kiểm tra đã chạy `setup_initial_data.py` chưa
+2. Kiểm tra API hoạt động: http://localhost:8080/api/v1/layers/
+3. Bật DevTools (F12) xem lỗi Console
+4. Refresh trang (Ctrl+F5)
+
+---
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Tạo feature branch: `git checkout -b feature/AmazingFeature`
+3. Commit changes: `git commit -m 'Add some AmazingFeature'`
+4. Push to branch: `git push origin feature/AmazingFeature`
+5. Tạo Pull Request
+
+---
+
+## 📄 License
+
+Educational purposes only.
+
+---
+
+## 📧 Liên Hệ
+
+- **GitHub Issues**: https://github.com/Tietve/webgisc3/issues
+- **Repository**: https://github.com/Tietve/webgisc3
+
+---
+
+## ⭐ Screenshots
+
+### Bản Đồ Tương Tác
+![Map Viewer](https://via.placeholder.com/800x400?text=Map+Viewer+with+Layers)
+
+### Quản Lý Lớp Học
+![Classrooms](https://via.placeholder.com/800x400?text=Classroom+Management)
+
+### Công Cụ GIS
+![Tools](https://via.placeholder.com/800x400?text=GIS+Analysis+Tools)
+
+---
+
+**Phát triển với ❤️ bằng Django, GeoDjango, PostGIS, React & Leaflet**
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
