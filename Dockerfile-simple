@@ -1,0 +1,22 @@
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies (minimal)
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements-simple.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-simple.txt
+
+# Copy project
+COPY . .
+
+# Run migrations and start server
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]

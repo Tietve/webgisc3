@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: webgis_db
+      POSTGRES_USER: webgis_user
+      POSTGRES_PASSWORD: webgis_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webgis_user -d webgis_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile-simple
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.simple
+      - DATABASE_URL=postgresql://webgis_user:webgis_pass@db:5432/webgis_db
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login</title>
+</head>
+<body>
+    <h1>Testing Login API</h1>
+    <div id="result"></div>
+
+    <script>
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing login...';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/auth/token/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'teacher@example.com',
+                        password: 'teacher123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <h2 style="color: green;">✅ Login Success!</h2>
+                        <p><strong>Access Token:</strong> ${data.access.substring(0, 50)}...</p>
+                        <p><strong>Refresh Token:</strong> ${data.refresh.substring(0, 50)}...</p>
+                    `;
+                } else {
+                    const error = await response.json();
+                    resultDiv.innerHTML = `
+                        <h2 style="color: red;">❌ Login Failed</h2>
+                        <p>${JSON.stringify(error)}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h2 style="color: red;">❌ Error</h2>
+                    <p>${error.message}</p>
+                    <p>Check browser console for CORS errors</p>
+                `;
+                console.error('Error:', error);
+            }
+        }
+
+        // Run test after 2 seconds
+        setTimeout(testLogin, 2000);
+    </script>
+</body>
+</html>

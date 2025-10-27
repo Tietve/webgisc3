@@ -1,0 +1,145 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hà Nội",
+        "code": "HN",
+        "region": "Miền Bắc",
+        "population": 8053663,
+        "area_km2": 3328.9
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[105.6, 20.9], [105.6, 21.2], [106.0, 21.2], [106.0, 20.9], [105.6, 20.9]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hồ Chí Minh",
+        "code": "HCM",
+        "region": "Miền Nam",
+        "population": 8993082,
+        "area_km2": 2061.0
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[106.5, 10.6], [106.5, 11.0], [106.9, 11.0], [106.9, 10.6], [106.5, 10.6]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Đà Nẵng",
+        "code": "DN",
+        "region": "Miền Trung",
+        "population": 1134310,
+        "area_km2": 1285.4
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[107.9, 15.9], [107.9, 16.2], [108.3, 16.2], [108.3, 15.9], [107.9, 15.9]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hải Phòng",
+        "code": "HP",
+        "region": "Miền Bắc",
+        "population": 2028514,
+        "area_km2": 1527.4
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[106.5, 20.7], [106.5, 21.0], [106.9, 21.0], [106.9, 20.7], [106.5, 20.7]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cần Thơ",
+        "code": "CT",
+        "region": "Miền Nam",
+        "population": 1282095,
+        "area_km2": 1409.0
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[105.6, 10.0], [105.6, 10.3], [106.0, 10.3], [106.0, 10.0], [105.6, 10.0]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Quảng Ninh",
+        "code": "QN",
+        "region": "Miền Bắc",
+        "population": 1320324,
+        "area_km2": 6102.0
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[107.0, 20.8], [107.0, 21.3], [107.7, 21.3], [107.7, 20.8], [107.0, 20.8]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Lâm Đồng",
+        "code": "LD",
+        "region": "Miền Nam",
+        "population": 1372800,
+        "area_km2": 9773.5
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[107.7, 11.5], [107.7, 12.2], [108.5, 12.2], [108.5, 11.5], [107.7, 11.5]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Thừa Thiên Huế",
+        "code": "TTH",
+        "region": "Miền Trung",
+        "population": 1154849,
+        "area_km2": 5063.0
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[107.3, 16.2], [107.3, 16.8], [107.9, 16.8], [107.9, 16.2], [107.3, 16.2]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Bắc Ninh",
+        "code": "BN",
+        "region": "Miền Bắc",
+        "population": 1376900,
+        "area_km2": 822.7
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[106.0, 21.0], [106.0, 21.3], [106.3, 21.3], [106.3, 21.0], [106.0, 21.0]]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Nghệ An",
+        "code": "NA",
+        "region": "Miền Trung",
+        "population": 3327791,
+        "area_km2": 16490.9
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [[[[104.5, 18.5], [104.5, 19.5], [105.7, 19.5], [105.7, 18.5], [104.5, 18.5]]]]
+      }
+    }
+  ]
+}
