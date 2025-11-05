@@ -83,7 +83,19 @@ npm run dev
 
 ## 📚 Hướng Dẫn Chi Tiết
 
-- **[Hướng Dẫn Cho Người Mới](docs/HUONG_DAN_CHẠY.md)** ⭐ - Bắt đầu từ đầu, chi tiết nhất
+> 📖 **[XEM INDEX ĐẦY ĐỦ TẤT CẢ TÀI LIỆU](INDEX_TAI_LIEU.md)** ← Bắt đầu từ đây!
+
+### 🚀 Dành Cho Người Mới (Bắt Đầu Từ Đây!)
+- **[Setup Cho Bạn Bè](SETUP_CHO_BAN_BE.md)** ⭐ - Hướng dẫn clone code và chạy lần đầu
+- **[Import SQL Nhanh](HUONG_DAN_IMPORT_SQL.md)** - Import dữ liệu mẫu qua pgAdmin
+
+### 📍 Thêm Dữ Liệu & Layer Mới
+- **[Hướng Dẫn Thêm Layer Mới](HUONG_DAN_THEM_LAYER_MOI.md)** ⭐ - Chi tiết từng bước, dễ hiểu
+- **[Cheat Sheet Thêm Layer](CHEAT_SHEET_THEM_LAYER.md)** ⚡ - Copy & paste nhanh
+- **[Kiến Trúc Hệ Thống](KIEN_TRUC_HE_THONG.md)** 🏗️ - Hiểu cách hoạt động
+
+### 📖 Tài Liệu Kỹ Thuật
+- **[Hướng Dẫn Cho Người Mới](docs/HUONG_DAN_CHẠY.md)** - Bắt đầu từ đầu, chi tiết nhất
 - **[Các Loại Geometry GIS](docs/HUONG_DAN_CAC_LOAI_GEOMETRY.md)** - Point, Line, Polygon
 - **[Kết Nối pgAdmin](docs/HUONG_DAN_KET_NOI_PGADMIN.md)** - Quản lý database
 - **[Thêm Dữ Liệu GIS Nhanh](docs/THEM_DU_LIEU_GIS_NHANH.md)** - SQL examples
