@@ -14,6 +14,8 @@ class MapLayer(models.Model):
         data_source_table: Name of the PostGIS table containing the data
         geom_type: Geometry type (POINT, LINESTRING, POLYGON, etc.)
         description: Optional description of the layer
+        filter_column: Optional column name to filter data (e.g., 'category')
+        filter_value: Optional value to filter by (e.g., 'truong_hoc')
         is_active: Whether the layer is active and visible
         created_at: Timestamp of layer creation
         updated_at: Timestamp of last update
@@ -38,6 +40,18 @@ class MapLayer(models.Model):
         help_text='Geometry type stored in this layer'
     )
     description = models.TextField(blank=True, help_text='Description of the layer')
+    filter_column = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Optional column name to filter data (e.g., category)'
+    )
+    filter_value = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Optional value to filter by (e.g., truong_hoc)'
+    )
     is_active = models.BooleanField(default=True, help_text='Whether the layer is active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

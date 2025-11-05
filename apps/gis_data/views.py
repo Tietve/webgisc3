@@ -84,6 +84,15 @@ class MapLayerViewSet(viewsets.ReadOnlyModelViewSet):
             table_name = layer.data_source_table
 
             with connection.cursor() as cursor:
+                # Build WHERE clause with optional filtering
+                where_clauses = ["geometry IS NOT NULL"]
+
+                # Add filter if specified in layer configuration
+                if layer.filter_column and layer.filter_value:
+                    where_clauses.append(f"{layer.filter_column} = '{layer.filter_value}'")
+
+                where_clause = " AND ".join(where_clauses)
+
                 query = f"""
                     SELECT json_build_object(
                         'type', 'FeatureCollection',
@@ -101,7 +110,7 @@ class MapLayerViewSet(viewsets.ReadOnlyModelViewSet):
                         ), '[]'::json)
                     ) as geojson
                     FROM {table_name}
-                    WHERE geometry IS NOT NULL;
+                    WHERE {where_clause};
                 """
 
                 try:

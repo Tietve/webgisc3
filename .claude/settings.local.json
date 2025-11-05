@@ -49,7 +49,9 @@
       "Bash(mkdir:*)",
       "Bash(git mv:*)",
       "Bash(mv:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(apps/gis_data/migrations/__init__.py)",
+      "Bash(timeout 10 echo:*)"
     ],
     "deny": [],
     "ask": []
