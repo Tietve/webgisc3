@@ -51,7 +51,8 @@
       "Bash(mv:*)",
       "Bash(nul)",
       "Bash(apps/gis_data/migrations/__init__.py)",
-      "Bash(timeout 10 echo:*)"
+      "Bash(timeout 10 echo:*)",
+      "Bash(start http://localhost:5050)"
     ],
     "deny": [],
     "ask": []
