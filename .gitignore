@@ -51,6 +51,9 @@ staticfiles/
 # Backup files
 *.bak
 
+# Archive
+archive/
+
 # Frontend
 frontend/node_modules/
 node_modules/

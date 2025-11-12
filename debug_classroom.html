@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Classroom API</title>
+</head>
+<body>
+    <h1>Debug Classroom API</h1>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(msg) {
+            output.innerHTML += `<p>${msg}</p>`;
+            console.log(msg);
+        }
+
+        async function testAPI() {
+            try {
+                // Get token from localStorage (assuming you're logged in)
+                const token = localStorage.getItem('access_token');
+                log('Token: ' + (token ? 'Found' : 'NOT FOUND - Please login first!'));
+
+                if (!token) {
+                    log('ERROR: No access token found. Please login at http://localhost:3001/login first!');
+                    return;
+                }
+
+                // Test list classrooms
+                log('Testing GET /api/v1/classrooms/...');
+                const listResponse = await fetch('http://localhost:8080/api/v1/classrooms/', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`Response status: ${listResponse.status}`);
+                const listData = await listResponse.json();
+                log(`Response data: ${JSON.stringify(listData, null, 2)}`);
+
+                if (Array.isArray(listData)) {
+                    log(`✓ Got ${listData.length} classrooms`);
+                    listData.forEach((classroom, i) => {
+                        log(`  Classroom ${i+1}: ${classroom.name}`);
+                        log(`    - ID: ${classroom.id}`);
+                        log(`    - Enrollment code: ${classroom.enrollment_code}`);
+                        log(`    - Teacher email: ${classroom.teacher_email || 'MISSING!'}`);
+                        log(`    - Teacher object: ${JSON.stringify(classroom.teacher)}`);
+                    });
+                } else {
+                    log(`ERROR: Expected array, got: ${typeof listData}`);
+                }
+
+                // Test create classroom
+                log('\\nTesting POST /api/v1/classrooms/...');
+                const createResponse = await fetch('http://localhost:8080/api/v1/classrooms/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: `Debug Test ${Date.now()}`
+                    })
+                });
+
+                log(`Create response status: ${createResponse.status}`);
+                const createData = await createResponse.json();
+                log(`Create response: ${JSON.stringify(createData, null, 2)}`);
+
+                if (createResponse.ok) {
+                    log(`✓ Created classroom: ${createData.name}`);
+                    log(`  - Has teacher_email: ${!!createData.teacher_email}`);
+                } else {
+                    log(`ERROR creating classroom: ${createData.error || createData.detail}`);
+                }
+
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // Run test when page loads
+        testAPI();
+    </script>
+</body>
+</html>

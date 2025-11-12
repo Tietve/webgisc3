@@ -3,7 +3,7 @@ Serializers for classroom and enrollment management.
 """
 from rest_framework import serializers
 from apps.users.serializers import UserSerializer
-from .models import Classroom, Enrollment
+from .models import Classroom, Enrollment, Announcement
 
 
 class ClassroomSerializer(serializers.ModelSerializer):
@@ -11,11 +11,12 @@ class ClassroomSerializer(serializers.ModelSerializer):
     Serializer for Classroom model.
     """
     teacher = UserSerializer(read_only=True)
+    teacher_email = serializers.EmailField(source='teacher.email', read_only=True)
     student_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Classroom
-        fields = ('id', 'name', 'teacher', 'enrollment_code', 'student_count', 'created_at', 'updated_at')
+        fields = ('id', 'name', 'teacher', 'teacher_email', 'enrollment_code', 'student_count', 'created_at', 'updated_at')
         read_only_fields = ('id', 'enrollment_code', 'created_at', 'updated_at')
 
     def get_student_count(self, obj):
@@ -102,3 +103,25 @@ class StudentListSerializer(serializers.ModelSerializer):
             'email': instance.student.email,
             'enrolled_at': instance.enrolled_at
         }
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Announcement model.
+    """
+    author_email = serializers.EmailField(source='author.email', read_only=True)
+    author_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Announcement
+        fields = ('id', 'classroom', 'author', 'author_email', 'author_name', 'content', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'author', 'created_at', 'updated_at')
+
+    def get_author_name(self, obj):
+        """Get author's display name (email for now)."""
+        return obj.author.email
+
+    def create(self, validated_data):
+        """Create announcement with the authenticated user as author."""
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)

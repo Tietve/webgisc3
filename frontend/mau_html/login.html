@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Map - Login & Signup (With Background)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background với ảnh từ Unsplash */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('./src/assets/images/nen_login.jpg') center/cover no-repeat;
+            z-index: -1;
+        }
+
+        /* Overlay để làm tối background một chút */
+        .background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Container chính */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Glass morphism box - Layout ngang */
+        .auth-box {
+            position: relative;
+            width: 100%;
+            max-width: 950px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideIn 0.5s ease-out;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 550px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Left side - Welcome section */
+        .welcome-section {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 50px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+        }
+
+        .welcome-section h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .welcome-section p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .welcome-features {
+            list-style: none;
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .welcome-features li {
+            padding: 12px 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .welcome-features li::before {
+            content: '✓';
+            background: rgba(255, 255, 255, 0.3);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Right side - Form section */
+        .form-section {
+            padding: 50px 45px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Tab switcher */
+        .tab-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Form container */
+        .form-container {
+            flex: 1;
+        }
+
+        .form-content {
+            display: none;
+        }
+
+        .form-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Form groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Remember me & Forgot password */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.95);
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .forgot-password {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .forgot-password:hover {
+            opacity: 0.8;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Floating particles animation */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1;
+            font-size: 20px;
+            animation: fall linear forwards;
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) rotate(0deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(110vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .auth-box {
+                grid-template-columns: 1fr;
+                max-width: 420px;
+            }
+
+            .welcome-section {
+                display: none;
+            }
+
+            .form-section {
+                padding: 40px 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-box {
+                border-radius: 0;
+            }
+
+            .form-section {
+                padding: 30px 25px;
+            }
+        }
+
+        /* Loading animation */
+        .submit-btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .submit-btn.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 25px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .divider span {
+            padding: 0 15px;
+        }
+
+        /* Google Button */
+        .google-btn {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: #444;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .google-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .google-btn:active {
+            transform: translateY(0);
+        }
+
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .google-btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .google-btn.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid #444;
+            border-top-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+            animation: spin 0.6s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div class="background"></div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <div class="auth-box">
+            <!-- Left side - Welcome Section -->
+            <div class="welcome-section">
+                <h1>🗺️ Locket Map</h1>
+                <p>Kết nối và khám phá thế giới xung quanh bạn</p>
+                <ul class="welcome-features">
+                    <li>Tìm kiếm bạn bè gần đây</li>
+                    <li>Chia sẻ vị trí thời gian thực</li>
+                    <li>Khám phá địa điểm mới</li>
+                    <li>Tạo nhóm và sự kiện</li>
+                </ul>
+            </div>
+
+            <!-- Right side - Form Section -->
+            <div class="form-section">
+                <!-- Tab Switcher -->
+                <div class="tab-switcher">
+                    <button class="tab-btn active" onclick="switchTab('login')">Đăng nhập</button>
+                    <button class="tab-btn" onclick="switchTab('signup')">Đăng ký</button>
+                </div>
+
+                <!-- Form Container -->
+                <div class="form-container">
+                <!-- Login Form -->
+                <div class="form-content active" id="login-form">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label for="login-email">Email</label>
+                            <input type="email" id="login-email" placeholder="Nhập email của bạn" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="login-password">Mật khẩu</label>
+                            <input type="password" id="login-password" placeholder="Nhập mật khẩu" required>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="remember-me">
+                                <input type="checkbox" id="remember-me">
+                                <span>Ghi nhớ đăng nhập</span>
+                            </label>
+                            <a href="#" class="forgot-password">Quên mật khẩu?</a>
+                        </div>
+
+                        <button type="submit" class="submit-btn">Đăng nhập</button>
+
+                        <div class="divider">
+                            <span>Hoặc</span>
+                        </div>
+
+                        <button type="button" class="google-btn" onclick="handleGoogleLogin()">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19.8055 10.2292C19.8055 9.55639 19.75 8.88292 19.6305 8.22217H10.2V12.0555H15.6014C15.3773 13.3 14.6571 14.4082 13.6023 15.1055V17.5746H16.825C18.7173 15.8337 19.8055 13.2664 19.8055 10.2292Z" fill="#4285F4"/>
+                                <path d="M10.2 20C12.9568 20 15.2718 19.1046 16.8286 17.5746L13.6059 15.1055C12.7073 15.7 11.5514 16.0428 10.2036 16.0428C7.54409 16.0428 5.28864 14.2837 4.49636 11.9164H1.17773V14.4619C2.76818 17.6219 6.32727 20 10.2 20Z" fill="#34A853"/>
+                                <path d="M4.49273 11.9164C4.06545 10.6718 4.06545 9.3319 4.49273 8.08728V5.54181H1.17818C-0.195455 8.26909 -0.195455 11.7346 1.17818 14.4619L4.49273 11.9164Z" fill="#FBBC04"/>
+                                <path d="M10.2 3.95728C11.6214 3.93546 13.0014 4.47273 14.0418 5.45819L16.8932 2.60637C15.1859 0.990916 12.7336 0.0772748 10.2 0.104548C6.32727 0.104548 2.76818 2.48273 1.17773 5.54182L4.49227 8.08728C5.28045 5.71637 7.54 3.95728 10.2 3.95728Z" fill="#EA4335"/>
+                            </svg>
+                            Đăng nhập với Google
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Signup Form -->
+                <div class="form-content" id="signup-form">
+                    <form onsubmit="handleSignup(event)">
+                        <div class="form-group">
+                            <label for="signup-name">Họ và tên</label>
+                            <input type="text" id="signup-name" placeholder="Nhập họ và tên" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-email">Email</label>
+                            <input type="email" id="signup-email" placeholder="Nhập email của bạn" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-password">Mật khẩu</label>
+                            <input type="password" id="signup-password" placeholder="Tạo mật khẩu (tối thiểu 8 ký tự)" required minlength="8">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-confirm">Xác nhận mật khẩu</label>
+                            <input type="password" id="signup-confirm" placeholder="Nhập lại mật khẩu" required>
+                        </div>
+
+                        <button type="submit" class="submit-btn">Đăng ký</button>
+
+                        <div class="divider">
+                            <span>Hoặc</span>
+                        </div>
+
+                        <button type="button" class="google-btn" onclick="handleGoogleLogin()">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19.8055 10.2292C19.8055 9.55639 19.75 8.88292 19.6305 8.22217H10.2V12.0555H15.6014C15.3773 13.3 14.6571 14.4082 13.6023 15.1055V17.5746H16.825C18.7173 15.8337 19.8055 13.2664 19.8055 10.2292Z" fill="#4285F4"/>
+                                <path d="M10.2 20C12.9568 20 15.2718 19.1046 16.8286 17.5746L13.6059 15.1055C12.7073 15.7 11.5514 16.0428 10.2036 16.0428C7.54409 16.0428 5.28864 14.2837 4.49636 11.9164H1.17773V14.4619C2.76818 17.6219 6.32727 20 10.2 20Z" fill="#34A853"/>
+                                <path d="M4.49273 11.9164C4.06545 10.6718 4.06545 9.3319 4.49273 8.08728V5.54181H1.17818C-0.195455 8.26909 -0.195455 11.7346 1.17818 14.4619L4.49273 11.9164Z" fill="#FBBC04"/>
+                                <path d="M10.2 3.95728C11.6214 3.93546 13.0014 4.47273 14.0418 5.45819L16.8932 2.60637C15.1859 0.990916 12.7336 0.0772748 10.2 0.104548C6.32727 0.104548 2.76818 2.48273 1.17773 5.54182L4.49227 8.08728C5.28045 5.71637 7.54 3.95728 10.2 3.95728Z" fill="#EA4335"/>
+                            </svg>
+                            Đăng nhập với Google
+                        </button>
+                    </form>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Switch between login and signup tabs
+        function switchTab(tab) {
+            // Update tab buttons
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update form content
+            const forms = document.querySelectorAll('.form-content');
+            forms.forEach(form => form.classList.remove('active'));
+
+            if (tab === 'login') {
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.getElementById('signup-form').classList.add('active');
+            }
+        }
+
+        // Handle login
+        function handleLogin(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('.submit-btn');
+            btn.classList.add('loading');
+
+            // Simulate API call
+            setTimeout(() => {
+                const email = document.getElementById('login-email').value;
+                alert(`Đăng nhập thành công với email: ${email}`);
+                btn.classList.remove('loading');
+            }, 1500);
+        }
+
+        // Handle signup
+        function handleSignup(event) {
+            event.preventDefault();
+            const password = document.getElementById('signup-password').value;
+            const confirm = document.getElementById('signup-confirm').value;
+
+            if (password !== confirm) {
+                alert('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            const btn = event.target.querySelector('.submit-btn');
+            btn.classList.add('loading');
+
+            // Simulate API call
+            setTimeout(() => {
+                const name = document.getElementById('signup-name').value;
+                alert(`Đăng ký thành công! Chào mừng ${name}`);
+                btn.classList.remove('loading');
+                // Switch to login tab
+                switchTab('login');
+                document.querySelector('.tab-btn').click();
+            }, 1500);
+        }
+
+        // Handle Google login
+        function handleGoogleLogin() {
+            const btn = event.target;
+            btn.classList.add('loading');
+
+            // Simulate Google OAuth
+            setTimeout(() => {
+                alert('Đăng nhập Google thành công!\n\nTrong thực tế, đây sẽ mở popup Google OAuth hoặc redirect đến trang xác thực của Google.');
+                btn.classList.remove('loading');
+
+                // Simulate successful login
+                // window.location.href = '/dashboard';
+            }, 1500);
+        }
+
+        // Create floating particles
+        function createParticle() {
+            const particles = ['❤️', '💙', '👍', '⭐', '✨', '💫', '🌟', '💖'];
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+
+            // Random horizontal position
+            particle.style.left = Math.random() * 100 + 'vw';
+
+            // Random animation duration (5-10 seconds)
+            const duration = 5 + Math.random() * 5;
+            particle.style.animationDuration = duration + 's';
+
+            // Random size
+            const size = 15 + Math.random() * 15;
+            particle.style.fontSize = size + 'px';
+
+            document.body.appendChild(particle);
+
+            // Remove particle after animation
+            setTimeout(() => {
+                particle.remove();
+            }, duration * 1000);
+        }
+
+        // Create particles continuously
+        setInterval(createParticle, 500);
+
+        // Create initial burst of particles
+        for (let i = 0; i < 10; i++) {
+            setTimeout(createParticle, i * 200);
+        }
+    </script>
+</body>
+</html>

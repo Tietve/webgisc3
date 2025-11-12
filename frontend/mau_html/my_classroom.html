@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Classroom Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb", // Changed to a vibrant blue
+                        "primary-light": "#eff6ff", // New light blue for accents
+                        "background-light": "#f0f9ff", // Lighter, sky blue background
+                        "background-dark": "#1e293b", // Adjusted dark background
+                        "text-light": "#1e293b",
+                        "text-dark": "#f8fafc",
+                        "card-light": "#ffffff",
+                        "card-dark": "#334155",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex min-h-screen w-full flex-row">
+<div class="flex h-screen min-w-[250px] flex-col justify-between border-r border-gray-200/80 dark:border-gray-700 bg-gray-900 dark:bg-black p-4">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User profile picture of Mr. Anh" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAwDRGNrFQqoHMwWz1K2t-0XD3P1bwo86y3hsuKZszX6TmcV9W0f2_Tr3RfvLKLYXH_Thr5dBD8rumS22nTdz36fAZ4xnyESZumd01C9rExWhsgiM2dr6MqUtDxiJUYEuE69tuJ0jcXMqrbH3q87l4qFVAO6wwDzzW9TveNx0L3DY9BWo-7Vc0vjteDcee-Ki2zW-PE-k7hDGwZviNSV7n2LFe0n81vBr9zsbt0mYU5Y_QakowI8cFQxPt_Jcsl-o_3MDklSNiunPmU");'></div>
+<div class="flex flex-col">
+<h1 class="text-gray-200 text-base font-medium leading-normal">Mr. Anh</h1>
+<p class="text-gray-400 text-sm font-normal leading-normal">Teacher</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 pt-4">
+<div class="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg hover:bg-gray-800">
+<span class="material-symbols-outlined text-gray-300">dashboard</span>
+<p class="text-gray-300 text-sm font-medium leading-normal">Dashboard</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/20">
+<span class="material-symbols-outlined text-white font-bold">school</span>
+<p class="text-white text-sm font-bold leading-normal">My Classrooms</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg hover:bg-gray-800">
+<span class="material-symbols-outlined text-gray-300">map</span>
+<p class="text-gray-300 text-sm font-medium leading-normal">Map View</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg hover:bg-gray-800">
+<span class="material-symbols-outlined text-gray-300">settings</span>
+<p class="text-gray-300 text-sm font-medium leading-normal">Settings</p>
+</div>
+</div>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
+<span class="truncate">Logout</span>
+</button>
+</div>
+</div>
+<main class="flex-1 p-8 overflow-y-auto bg-white dark:bg-background-dark relative">
+<div class="absolute inset-0 z-0">
+<div class="absolute top-1/4 left-1/4 w-32 h-32 bg-contain bg-no-repeat opacity-5" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCNl_G0F61vkcn7bPlxEgrl-PKAlSaw27eR0iWi-rmQHbr6Mp1vSYvPzXRrHD02HacR07C8atcnqyhqs80Pd2p5nBWi2Tgl4VN6-EFZdmYs5qR1g93ANR8yjk9vc3Kz9AYGnhu18sVF90nm__Ct_0NtLcHQNyZ05yaNgHRV4LUJ4RG3JIhP8OzcDf3ijJFAfF8KhB4ACdOGVtS-fhwPqsy-cjm7U70oOyHLTyUEQV735GrKr9dM8lMgHtd6ryIJgrI6b5TwPhfkB0nJ');"></div>
+<div class="absolute top-1/2 right-1/4 w-24 h-24 bg-contain bg-no-repeat opacity-5" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCNl_G0F61vkcn7bPlxEgrl-PKAlSaw27eR0iWi-rmQHbr6Mp1vSYvPzXRrHD02HacR07C8atcnqyhqs80Pd2p5nBWi2Tgl4VN6-EFZdmYs5qR1g93ANR8yjk9vc3Kz9AYGnhu18sVF90nm__Ct_0NtLcHQNyZ05yaNgHRV4LUJ4RG3JIhP8OzcDf3ijJFAfF8KhB4ACdOGVtS-fhwPqsy-cjm7U70oOyHLTyUEQV735GrKr9dM8lMgHtd6ryIJgrI6b5TwPhfkB0nJ');"></div>
+<div class="absolute bottom-10 left-10 w-28 h-28 bg-contain bg-no-repeat opacity-5" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCNl_G0F61vkcn7bPlxEgrl-PKAlSaw27eR0iWi-rmQHbr6Mp1vSYvPzXRrHD02HacR07C8atcnqyhqs80Pd2p5nBWi2Tgl4VN6-EFZdmYs5qR1g93ANR8yjk9vc3Kz9AYGnhu18sVF90nm__Ct_0NtLcHQNyZ05yaNgHRV4LUJ4RG3JIhP8OzcDf3ijJFAfF8KhB4ACdOGVtS-fhwPqsy-cjm7U70oOyHLTyUEQV735GrKr9dM8lMgHtd6ryIJgrI6b5TwPhfkB0nJ'); transform: rotate(-15deg);"></div>
+<div class="absolute top-20 right-20 w-36 h-36 bg-contain bg-no-repeat opacity-5" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCNl_G0F61vkcn7bPlxEgrl-PKAlSaw27eR0iWi-rmQHbr6Mp1vSYvPzXRrHD02HacR07C8atcnqyhqs80Pd2p5nBWi2Tgl4VN6-EFZdmYs5qR1g93ANR8yjk9vc3Kz9AYGnhu18sVF90nm__Ct_0NtLcHQNyZ05yaNgHRV4LUJ4RG3JIhP8OzcDf3ijJFAfF8KhB4ACdOGVtS-fhwPqsy-cjm7U70oOyHLTyUEQV735GrKr9dM8lMgHtd6ryIJgrI6b5TwPhfkB0nJ'); transform: rotate(20deg);"></div>
+<div class="absolute bottom-1/3 right-1/3 w-20 h-20 bg-contain bg-no-repeat opacity-5" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCNl_G0F61vkcn7bPlxEgrl-PKAlSaw27eR0iWi-rmQHbr6Mp1vSYvPzXRrHD02HacR07C8atcnqyhqs80Pd2p5nBWi2Tgl4VN6-EFZdmYs5qR1g93ANR8yjk9vc3Kz9AYGnhu18sVF90nm__Ct_0NtLcHQNyZ05yaNgHRV4LUJ4RG3JIhP8OzcDf3ijJFAfF8KhB4ACdOGVtS-fhwPqsy-cjm7U70oOyHLTyUEQV735GrKr9dM8lMgHtd6ryIJgrI6b5TwPhfkB0nJ');"></div>
+</div>
+<div class="mx-auto max-w-7xl relative z-10">
+<div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+<p class="text-text-light dark:text-white text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">Lớp học của tôi</p>
+</div>
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+<div class="flex flex-col justify-between bg-card-light dark:bg-card-dark rounded-xl shadow-lg shadow-blue-500/5 p-6 border border-gray-200 dark:border-gray-700">
+<div class="flex-grow">
+<h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">GIS Cơ bản 2024</h3>
+<div class="flex items-center gap-2 mb-4">
+<span class="text-sm text-gray-500 dark:text-gray-400">Mã tham gia:</span>
+<span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/50 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">ABC12345</span>
+</div>
+<p class="text-sm text-gray-600 dark:text-gray-300">Giáo viên: Mr. Anh</p>
+</div>
+<button class="mt-6 flex w-full min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
+<span class="truncate">Vào Lớp học</span>
+</button>
+</div>
+<div class="flex flex-col justify-between bg-card-light dark:bg-card-dark rounded-xl shadow-lg shadow-blue-500/5 p-6 border border-gray-200 dark:border-gray-700">
+<div class="flex-grow">
+<h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Phân tích địa lý</h3>
+<div class="flex items-center gap-2 mb-4">
+<span class="text-sm text-gray-500 dark:text-gray-400">Mã tham gia:</span>
+<span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/50 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">XYZ67890</span>
+</div>
+<p class="text-sm text-gray-600 dark:text-gray-300">Giáo viên: Mr. Anh</p>
+</div>
+<button class="mt-6 flex w-full min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
+<span class="truncate">Vào Lớp học</span>
+</button>
+</div>
+<div class="flex flex-col justify-between bg-card-light dark:bg-card-dark rounded-xl shadow-lg shadow-blue-500/5 p-6 border border-gray-200 dark:border-gray-700">
+<div class="flex-grow">
+<h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Bản đồ số</h3>
+<div class="flex items-center gap-2 mb-4">
+<span class="text-sm text-gray-500 dark:text-gray-400">Mã tham gia:</span>
+<span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/50 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">DEF11223</span>
+</div>
+<p class="text-sm text-gray-600 dark:text-gray-300">Giáo viên: Mr. Anh</p>
+</div>
+<button class="mt-6 flex w-full min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
+<span class="truncate">Vào Lớp học</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<button class="fixed bottom-8 right-8 flex items-center justify-center size-14 bg-primary rounded-full text-white shadow-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background-dark">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden" id="action-modal">
+<div class="bg-white dark:bg-background-dark rounded-xl shadow-lg w-full max-w-md m-4">
+<div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+<h3 class="text-xl font-bold text-[#141118] dark:text-white">Tùy chọn</h3>
+<button class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6">
+<div class="space-y-4" id="options">
+<button class="w-full text-left p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+<h4 class="font-bold text-lg text-[#141118] dark:text-white">Tạo lớp học</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400">Tạo một lớp học mới và mời học sinh tham gia.</p>
+</button>
+<button class="w-full text-left p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary">
+<h4 class="font-bold text-lg text-[#141118] dark:text-white">Tham gia lớp học</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400">Tham gia một lớp học đã có bằng mã lớp.</p>
+</button>
+</div>
+<div class="hidden space-y-4" id="create-class-form">
+<h4 class="font-bold text-lg text-[#141118] dark:text-white">Tạo lớp học mới</h4>
+<div>
+<label class="block text-base font-medium text-[#141118] dark:text-gray-300 pb-2" for="new-class-name">Tên lớp học</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#141118] dark:text-white dark:bg-gray-800 focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#e0dbe6] dark:border-gray-600 bg-white focus:border-primary h-12 placeholder:text-[#756189] dark:placeholder:text-gray-500 p-3 text-base font-normal leading-normal" id="new-class-name" placeholder="Ví dụ: Lịch sử 10A1" type="text"/>
+</div>
+<div>
+<label class="block text-base font-medium text-[#141118] dark:text-gray-300 pb-2" for="teacher-name">Tên giáo viên</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#141118] dark:text-white dark:bg-gray-800 focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#e0dbe6] dark:border-gray-600 bg-white focus:border-primary h-12 placeholder:text-[#756189] dark:placeholder:text-gray-500 p-3 text-base font-normal leading-normal" id="teacher-name" type="text" value="Mr. Anh"/>
+</div>
+<div class="flex justify-end gap-3 pt-2">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-bold leading-normal hover:bg-gray-300 dark:hover:bg-gray-500">Hủy</button>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal hover:bg-primary/90">Tạo lớp</button>
+</div>
+</div>
+<div class="hidden space-y-4" id="join-class-form">
+<h4 class="font-bold text-lg text-[#141118] dark:text-white">Tham gia lớp học</h4>
+<div>
+<label class="block text-base font-medium text-[#141118] dark:text-gray-300 pb-2" for="join-code">Mã lớp học</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#141118] dark:text-white dark:bg-gray-800 focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#e0dbe6] dark:border-gray-600 bg-white focus:border-primary h-12 placeholder:text-[#756189] dark:placeholder:text-gray-500 p-3 text-base font-normal leading-normal" id="join-code" placeholder="Nhập mã tham gia..." type="text"/>
+</div>
+<div class="flex justify-end gap-3 pt-2">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-bold leading-normal hover:bg-gray-300 dark:hover:bg-gray-500">Hủy</button>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal hover:bg-primary/90">Tham gia</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden" id="student-modal">
+<div class="bg-white dark:bg-background-dark rounded-xl shadow-lg w-full max-w-2xl m-4">
+<div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+<h3 class="text-xl font-bold text-[#141118] dark:text-white">Danh sách học sinh - GIS Cơ bản 2024</h3>
+<button class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6">
+<div class="overflow-x-auto max-h-96">
+<table class="min-w-full text-left text-sm">
+<thead class="sticky top-0 bg-white dark:bg-background-dark">
+<tr>
+<th class="py-3.5 px-4 font-bold text-[#141118] dark:text-gray-300" scope="col">Email</th>
+<th class="py-3.5 px-4 font-bold text-[#141118] dark:text-gray-300" scope="col">Ngày tham gia</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+<tr>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">student1@example.com</td>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">2024-05-20</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">student2@example.com</td>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">2024-05-21</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">student3@example.com</td>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">2024-05-22</td>
+</tr>
+<tr>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">student4@example.com</td>
+<td class="whitespace-nowrap px-4 py-4 text-gray-700 dark:text-gray-300">2024-05-22</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</body></html>

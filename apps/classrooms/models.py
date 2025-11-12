@@ -29,8 +29,7 @@ class Classroom(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='classrooms_teaching',
-        limit_choices_to={'role': 'teacher'},
-        help_text='Teacher who manages this classroom'
+        help_text='User who created and manages this classroom'
     )
     enrollment_code = models.CharField(
         max_length=8,
@@ -69,8 +68,7 @@ class Enrollment(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='enrollments',
-        limit_choices_to={'role': 'student'},
-        help_text='Student enrolled in the classroom'
+        help_text='User enrolled in the classroom as a member'
     )
     classroom = models.ForeignKey(
         Classroom,
@@ -89,3 +87,40 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.student.email} enrolled in {self.classroom.name}"
+
+
+class Announcement(models.Model):
+    """
+    Model for classroom announcements/posts.
+
+    Fields:
+        classroom: Foreign key to the classroom
+        author: User who created the announcement
+        content: Text content of the announcement
+        created_at: Timestamp of creation
+        updated_at: Timestamp of last update
+    """
+    classroom = models.ForeignKey(
+        Classroom,
+        on_delete=models.CASCADE,
+        related_name='announcements',
+        help_text='Classroom this announcement belongs to'
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='announcements',
+        help_text='User who created this announcement'
+    )
+    content = models.TextField(help_text='Content of the announcement')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'announcements'
+        verbose_name = 'Announcement'
+        verbose_name_plural = 'Announcements'
+        ordering = ['-created_at']  # Newest first
+
+    def __str__(self):
+        return f"{self.author.email} - {self.classroom.name} - {self.created_at.strftime('%Y-%m-%d')}"
