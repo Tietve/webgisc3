@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Map Viewer</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#34a853",
+              "background-light": "#f8f9fa",
+              "background-dark": "#121212",
+              "card-light": "#ffffff",
+              "card-dark": "#1f1f1f",
+              "text-primary-light": "#1f1f1f",
+              "text-primary-dark": "#e8eaed",
+              "text-secondary-light": "#5f6368",
+              "text-secondary-dark": "#9aa0a6",
+              "border-light": "#e0e0e0",
+              "border-dark": "#3c4043",
+            },
+            fontFamily: {
+              display: ["Roboto", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+            },
+            boxShadow: {
+                'lg-vibrant': '0 10px 15px -3px rgba(52, 168, 83, 0.2), 0 4px 6px -2px rgba(52, 168, 83, 0.1)',
+            }
+          },
+        },
+      };
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-primary-light dark:text-text-primary-dark">
+<div class="flex min-h-screen">
+<aside class="w-[260px] bg-black text-white flex-shrink-0 flex flex-col fixed h-full z-30">
+<div class="h-16 flex items-center px-6 border-b border-gray-800">
+<a class="flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-primary text-3xl">public</span>
+<span class="font-bold text-xl">WebGIS</span>
+</a>
+</div>
+<nav class="flex-grow px-4 py-6 space-y-2">
+<a class="flex items-center gap-4 px-4 py-2.5 text-sm rounded-lg hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Bảng điều khiển</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-2.5 text-sm rounded-lg bg-gray-700 font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">map</span>
+<span>Bản đồ</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-2.5 text-sm rounded-lg hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined">school</span>
+<span>Lớp học</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-2.5 text-sm rounded-lg hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span>Thống kê</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-2.5 text-sm rounded-lg hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Cài đặt</span>
+</a>
+</nav>
+<div class="border-t border-gray-800 p-4">
+<a class="flex items-center gap-3 hover:bg-gray-800 p-2 rounded-lg" href="#">
+<img alt="User Avatar" class="w-10 h-10 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNN1sWJ2FpCavP5SjJZhZ8fKfzMjpfvOlgkBcrdZNkTbBRnriTkGt5Yf45Rag2KiuvwOA9QTDxe7MwVHbJCwdwdPqo_9IQcCwPAb1t40KePYnRTxoLJyH7NBrsQ4RrasF82d1ZpX7gnuX7CrethNQuTAKSqJhVUkon6ZHS70Gge54NdBy8r4-VAMfhAa5xra9LCO6i--_6R43LsVOu-EhYo_M7kgwVWZYCLGhSDjIqt9PbEFKesaAGHJ4nJFudgS6-NBzWsSxh98lZ"/>
+<div class="text-sm">
+<p class="font-semibold">Quang Thanh Bui</p>
+<p class="text-xs text-gray-400">Học sinh</p>
+</div>
+</a>
+</div>
+</aside>
+<div class="flex-1 flex flex-col ml-[260px]">
+<main class="flex-grow flex flex-col p-6 relative">
+<div class="absolute top-8 left-1/2 -translate-x-1/2 z-20 w-full max-w-lg px-4">
+<div class="bg-card-light dark:bg-card-dark rounded-full shadow-lg p-2 flex items-center justify-around gap-2 border border-border-light dark:border-border-dark">
+<button class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
+<span>🛠️</span>
+<span>Tools</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-white bg-primary shadow-lg-vibrant transition-all duration-300">
+<span>🗺️</span>
+<span>Layers</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
+<span>📚</span>
+<span>Lessons</span>
+</button>
+</div>
+</div>
+<div class="flex-grow w-full h-full rounded-lg overflow-hidden shadow-md -m-6">
+<div class="w-full h-full bg-gray-300 dark:bg-gray-800 flex items-center justify-center">
+<img alt="Mapbox Map Placeholder" class="w-1/2 max-w-xs object-contain opacity-40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjpnG4jKvy37EFgXexOqFKdu4pZNOiU7oGYuDbWAva7IdtRSsXeA1jylfQlezrOOVTamEgTK3SI7iCOw69HeBqSSxzRp8gMzRyLHGOhHfGze2A1RLEsOvCpqENlVEr6lFak_tDd7CBMVnlbxK0nsP7rDoZN6pW05jC51X8PT8twcn4AQBQeKa71x2EiJJBJbWg4yeOFeZjHSPC0FI7XOAazBvad5C33FYizshjuQgoPCwDfi-9ygQsDhdZGphlQTb2oPGIvktgR1sf"/>
+</div>
+</div>
+<button class="absolute bottom-8 right-8 z-20 w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white shadow-lg-vibrant hover:bg-green-700 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 transform hover:scale-110">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1, 'wght' 500;">quiz</span>
+</button>
+</main>
+</div>
+</div>
+</body></html>
