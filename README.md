@@ -52,7 +52,7 @@ npm install
 npm run dev
 ```
 
-**Xong! Truy cập:** http://localhost:3000
+**Xong! Truy cập:** http://localhost:7749
 
 ---
 
@@ -70,7 +70,7 @@ npm run dev
 
 | Service | URL | Mô tả |
 |---------|-----|-------|
-| **Frontend** | http://localhost:3000 | Giao diện bản đồ |
+| **Frontend** | http://localhost:7749 | Giao diện bản đồ |
 | **Backend API** | http://localhost:8080/api/v1/ | REST API |
 | **pgAdmin** | http://localhost:5050 | Quản lý database |
 | **Swagger** | http://localhost:8080/api/schema/swagger-ui/ | API docs |
@@ -104,7 +104,7 @@ npm run dev
 
 ## 🗺️ Cách Sử Dụng Bản Đồ
 
-1. Đăng nhập vào http://localhost:3000
+1. Đăng nhập vào http://localhost:7749
 2. Vào trang **Map Viewer**
 3. Click **🗺️ Layers** để bật/tắt các lớp:
    - **Điểm Quan Tâm** - Trường học, bệnh viện, hồ nước...
@@ -164,7 +164,7 @@ Xem thêm ví dụ trong file **`test_all_geometry_types.sql`**
 ```
 ┌─────────────────┐
 │   Frontend      │  React + Vite + Leaflet
-│  localhost:3000 │  Hiển thị bản đồ tương tác
+│  localhost:7749 │  Hiển thị bản đồ tương tác
 └────────┬────────┘
          │ HTTP/REST
 ┌────────▼────────┐
