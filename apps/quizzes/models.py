@@ -3,6 +3,7 @@ Models for quiz and assessment system.
 """
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from apps.classrooms.models import Classroom
 
 
@@ -15,6 +16,9 @@ class Quiz(models.Model):
         title: Title of the quiz
         classroom: Foreign key to the classroom (optional)
         description: Optional description of the quiz
+        due_date: Deadline for quiz submission
+        late_submission_allowed: Whether late submissions are accepted
+        late_deadline: Extended deadline for late submissions
         created_at: Timestamp of quiz creation
         updated_at: Timestamp of last update
     """
@@ -28,6 +32,20 @@ class Quiz(models.Model):
         help_text='Classroom this quiz is assigned to'
     )
     description = models.TextField(blank=True, help_text='Description of the quiz')
+    due_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Deadline for quiz submission'
+    )
+    late_submission_allowed = models.BooleanField(
+        default=False,
+        help_text='Whether late submissions are accepted'
+    )
+    late_deadline = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Extended deadline for late submissions'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -35,10 +53,53 @@ class Quiz(models.Model):
         db_table = 'quizzes'
         verbose_name = 'Quiz'
         verbose_name_plural = 'Quizzes'
-        ordering = ['-created_at']
+        ordering = ['due_date', '-created_at']
 
     def __str__(self):
         return self.title
+
+    @property
+    def is_overdue(self):
+        """Check if quiz is past due date."""
+        if not self.due_date:
+            return False
+        return timezone.now() > self.due_date
+
+    @property
+    def deadline_status(self):
+        """
+        Get deadline status.
+        Returns: 'upcoming', 'due_soon', 'overdue', or 'no_deadline'
+        """
+        if not self.due_date:
+            return 'no_deadline'
+
+        now = timezone.now()
+        if now > self.due_date:
+            return 'overdue'
+
+        time_left = self.due_date - now
+        if time_left.days < 1:  # Less than 24 hours
+            return 'due_soon'
+        elif time_left.days <= 7:  # 1-7 days
+            return 'upcoming_soon'
+
+        return 'upcoming'
+
+    @property
+    def deadline_color(self):
+        """
+        Get color hint for frontend.
+        Returns: 'green', 'yellow', or 'red'
+        """
+        status = self.deadline_status
+        if status == 'overdue':
+            return 'red'
+        elif status in ['due_soon', 'upcoming_soon']:
+            return 'yellow'
+        elif status == 'upcoming':
+            return 'green'
+        return 'gray'  # no_deadline
 
 
 class QuizQuestion(models.Model):
@@ -106,8 +167,13 @@ class QuizSubmission(models.Model):
         id: Auto-incrementing primary key
         quiz: Foreign key to the quiz
         student: Foreign key to the student
-        score: Score achieved (0-100)
+        score: Auto-calculated score (0-100)
+        adjusted_score: Teacher-adjusted score override
+        teacher_feedback: Teacher's review comments
+        is_reviewed: Whether teacher has reviewed submission
+        is_late: Whether submission was late
         submitted_at: Timestamp of submission
+        answers: JSON field storing student answers
     """
     quiz = models.ForeignKey(
         Quiz,
@@ -122,7 +188,24 @@ class QuizSubmission(models.Model):
         limit_choices_to={'role': 'student'},
         help_text='Student who submitted the quiz'
     )
-    score = models.IntegerField(help_text='Score achieved (0-100)')
+    score = models.IntegerField(help_text='Auto-calculated score (0-100)')
+    adjusted_score = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text='Teacher-adjusted score override (0-100)'
+    )
+    teacher_feedback = models.TextField(
+        blank=True,
+        help_text='Teacher review comments'
+    )
+    is_reviewed = models.BooleanField(
+        default=False,
+        help_text='Whether teacher has reviewed this submission'
+    )
+    is_late = models.BooleanField(
+        default=False,
+        help_text='Whether submission was after deadline'
+    )
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     # Store the student's answers as JSON
@@ -139,4 +222,9 @@ class QuizSubmission(models.Model):
         unique_together = ('quiz', 'student')  # Each student can submit once per quiz
 
     def __str__(self):
-        return f"{self.student.email} - {self.quiz.title} ({self.score}%)"
+        return f"{self.student.email} - {self.quiz.title} ({self.final_score}%)"
+
+    @property
+    def final_score(self):
+        """Return adjusted score if exists, else auto-calculated score."""
+        return self.adjusted_score if self.adjusted_score is not None else self.score

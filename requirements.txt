@@ -18,6 +18,7 @@ drf-spectacular==0.27.1
 # Utilities
 python-decouple==3.8
 python-dotenv==1.0.1
+python-magic==0.4.27
 
 # Development
 ipython==8.22.2

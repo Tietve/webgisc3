@@ -32,6 +32,28 @@ export const ENDPOINTS = {
     DETAIL: (id) => `/quizzes/${id}/`,
     SESSION: (classId, quizId) => `/classrooms/${classId}/quiz_session/${quizId}/`,
     SUBMIT: '/quizzes/quiz_submissions/',
+    DEADLINES: '/quizzes/deadlines/',
+  },
+
+  // Assignments
+  ASSIGNMENTS: {
+    LIST: (classroomId) => `/classrooms/${classroomId}/assignments/`,
+    CREATE: (classroomId) => `/classrooms/${classroomId}/assignments/`,
+    DETAIL: (id) => `/assignments/${id}/`,
+    SUBMISSIONS: (assignmentId) => `/assignments/${assignmentId}/submissions/`,
+  },
+
+  // Submissions
+  SUBMISSIONS: {
+    CREATE: (assignmentId) => `/assignments/${assignmentId}/submit/`,
+    DETAIL: (id) => `/submissions/${id}/`,
+    GRADE: (id) => `/submissions/${id}/grade/`,
+    MY_SUBMISSIONS: (classroomId) => `/classrooms/${classroomId}/my-submissions/`,
+  },
+
+  // Deadlines (aggregated assignments + quizzes)
+  DEADLINES: {
+    LIST: '/quizzes/deadlines/',
   },
 
   // GIS

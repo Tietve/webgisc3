@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { MainLayout } from '@layouts'
 import { useAuth } from '@hooks'
-import { classroomService, announcementService } from '@services'
+import { classroomService, announcementService, assignmentService } from '@services'
+import AssignmentList from '@components/classroom/AssignmentList'
+import SubmissionForm from '@components/classroom/SubmissionForm'
+import GradingInterface from '@components/classroom/GradingInterface'
 
 const ClassroomDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const [classroom, setClassroom] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -16,10 +20,27 @@ const ClassroomDetailPage = () => {
   const [announcements, setAnnouncements] = useState([])
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false)
 
+  // Assignment states
+  const [selectedAssignment, setSelectedAssignment] = useState(null)
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false)
+  const [showGradingInterface, setShowGradingInterface] = useState(false)
+
   useEffect(() => {
     loadClassroom()
     loadAnnouncements()
-  }, [id])
+
+    // Check URL params for tab and assignment
+    const tab = searchParams.get('tab')
+    const assignmentId = searchParams.get('assignment')
+
+    if (tab) {
+      setActiveTab(tab)
+    }
+
+    if (assignmentId && tab === 'classwork') {
+      handleAssignmentClick(parseInt(assignmentId))
+    }
+  }, [id, searchParams])
 
   const loadClassroom = async () => {
     try {
@@ -65,6 +86,41 @@ const ClassroomDetailPage = () => {
       console.error('Error creating announcement:', error)
       alert('Không thể tạo thông báo. Vui lòng thử lại.')
     }
+  }
+
+  // Assignment handlers
+  const handleAssignmentClick = async (assignmentId) => {
+    try {
+      const assignment = await assignmentService.get(assignmentId)
+      setSelectedAssignment(assignment)
+
+      if (isOwner) {
+        setShowGradingInterface(true)
+      } else {
+        // Check if student already submitted
+        if (assignment.submission_status === 'not_submitted') {
+          setShowSubmissionForm(true)
+        } else {
+          // Show assignment detail (could create a separate view)
+          setShowSubmissionForm(false)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading assignment:', error)
+      alert('Không thể tải bài tập. Vui lòng thử lại.')
+    }
+  }
+
+  const handleSubmissionSuccess = () => {
+    setShowSubmissionForm(false)
+    setSelectedAssignment(null)
+    // Could show success message or refresh assignment list
+  }
+
+  const handleCloseAssignmentView = () => {
+    setSelectedAssignment(null)
+    setShowSubmissionForm(false)
+    setShowGradingInterface(false)
   }
 
   // Check if current user is the owner of this classroom
@@ -270,27 +326,63 @@ const ClassroomDetailPage = () => {
 
             {activeTab === 'classwork' && (
               <div className="space-y-6">
-                {/* Create Classwork Button - Only show for owner */}
-                {isOwner && (
-                  <div className="flex justify-end">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200">
-                      <span className="text-xl">➕</span>
-                      <span className="font-medium">Tạo bài tập</span>
-                    </button>
+                {/* Assignment Detail View */}
+                {selectedAssignment && showSubmissionForm && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="mb-4">
+                      <button
+                        onClick={handleCloseAssignmentView}
+                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        ← Quay lại danh sách
+                      </button>
+                    </div>
+                    <SubmissionForm
+                      assignment={selectedAssignment}
+                      onSubmitSuccess={handleSubmissionSuccess}
+                      onCancel={handleCloseAssignmentView}
+                    />
                   </div>
                 )}
 
-                {/* Empty State */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                  <div className="text-6xl mb-4">📝</div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Chưa có bài tập nào</h3>
-                  <p className="text-gray-500 mb-6">
-                    {isOwner
-                      ? 'Tạo bài tập đầu tiên cho lớp học của bạn'
-                      : 'Giáo viên sẽ đăng bài tập ở đây'
-                    }
-                  </p>
-                </div>
+                {/* Grading Interface (Teacher) */}
+                {selectedAssignment && showGradingInterface && (
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <button
+                        onClick={handleCloseAssignmentView}
+                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        ← Quay lại danh sách
+                      </button>
+                    </div>
+                    <GradingInterface
+                      assignment={selectedAssignment}
+                      onClose={handleCloseAssignmentView}
+                    />
+                  </div>
+                )}
+
+                {/* Assignment List */}
+                {!selectedAssignment && (
+                  <>
+                    {/* Create Assignment Button - Only show for owner */}
+                    {isOwner && (
+                      <div className="flex justify-end">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200">
+                          <span className="text-xl">➕</span>
+                          <span className="font-medium">Tạo bài tập</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Assignments List */}
+                    <AssignmentList
+                      classroomId={id}
+                      onAssignmentClick={handleAssignmentClick}
+                    />
+                  </>
+                )}
               </div>
             )}
 
