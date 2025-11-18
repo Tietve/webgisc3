@@ -2,11 +2,13 @@
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Map Viewer</title>
+<title>Map Viewer - 3D</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet"/>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
 <script>
       tailwind.config = {
@@ -46,6 +48,19 @@
           'wght' 400,
           'GRAD' 0,
           'opsz' 24
+        }
+    </style>
+    <style>
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        .mapboxgl-ctrl-attrib {
+            background-color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .dark .mapboxgl-ctrl-attrib {
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            color: white !important;
         }
     </style>
 </head>
@@ -94,24 +109,30 @@
 <main class="flex-grow flex flex-col p-6 relative">
 <div class="absolute top-8 left-1/2 -translate-x-1/2 z-20 w-full max-w-lg px-4">
 <div class="bg-card-light dark:bg-card-dark rounded-full shadow-lg p-2 flex items-center justify-around gap-2 border border-border-light dark:border-border-dark">
-<button class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
+<button id="toolsBtn" class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
 <span>🛠️</span>
 <span>Tools</span>
 </button>
-<button class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-white bg-primary shadow-lg-vibrant transition-all duration-300">
+<button id="layersBtn" class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-white bg-primary shadow-lg-vibrant transition-all duration-300">
 <span>🗺️</span>
 <span>Layers</span>
 </button>
-<button class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
+<button id="lessonsBtn" class="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5 px-4 rounded-full text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
 <span>📚</span>
 <span>Lessons</span>
 </button>
 </div>
 </div>
-<div class="flex-grow w-full h-full rounded-lg overflow-hidden shadow-md -m-6">
-<div class="w-full h-full bg-gray-300 dark:bg-gray-800 flex items-center justify-center">
-<img alt="Mapbox Map Placeholder" class="w-1/2 max-w-xs object-contain opacity-40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjpnG4jKvy37EFgXexOqFKdu4pZNOiU7oGYuDbWAva7IdtRSsXeA1jylfQlezrOOVTamEgTK3SI7iCOw69HeBqSSxzRp8gMzRyLHGOhHfGze2A1RLEsOvCpqENlVEr6lFak_tDd7CBMVnlbxK0nsP7rDoZN6pW05jC51X8PT8twcn4AQBQeKa71x2EiJJBJbWg4yeOFeZjHSPC0FI7XOAazBvad5C33FYizshjuQgoPCwDfi-9ygQsDhdZGphlQTb2oPGIvktgR1sf"/>
+<div class="absolute top-28 right-8 z-20 flex flex-col gap-3">
+<button id="darkModeToggle" class="w-12 h-12 bg-card-light dark:bg-card-dark rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 border border-border-light dark:border-border-dark" title="Toggle Dark/Light Mode">
+<span class="material-symbols-outlined text-2xl">dark_mode</span>
+</button>
+<button id="toggle3D" class="w-12 h-12 bg-card-light dark:bg-card-dark rounded-lg shadow-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 border border-border-light dark:border-border-dark" title="Toggle 3D View">
+<span class="material-symbols-outlined text-2xl">3d_rotation</span>
+</button>
 </div>
+<div class="flex-grow w-full h-full rounded-lg overflow-hidden shadow-md -m-6">
+<div id="map" class="w-full h-full"></div>
 </div>
 <button class="absolute bottom-8 right-8 z-20 w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white shadow-lg-vibrant hover:bg-green-700 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 transform hover:scale-110">
 <span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1, 'wght' 500;">quiz</span>
@@ -119,4 +140,152 @@
 </main>
 </div>
 </div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoidGhpZW5odXUyMDA1IiwiYSI6ImNtaHQ0dmw5bzB2MnAya3BzdGtxcTFiYjgifQ.EY3a0A0vjNR30dZcsPXvAw';
+
+    // Initialize map with default style (light)
+    let currentStyle = 'light';
+    let is3DMode = false;
+
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [105.8342, 21.0278], // Hanoi, Vietnam
+        zoom: 12,
+        pitch: 0,
+        bearing: 0,
+        antialias: true
+    });
+
+    // Add navigation controls
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-left');
+
+    // Add scale control
+    map.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
+
+    // Add fullscreen control
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+    // Enable 3D terrain and buildings when map loads
+    map.on('load', () => {
+        // Add 3D terrain
+        map.addSource('mapbox-dem', {
+            'type': 'raster-dem',
+            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            'tileSize': 512,
+            'maxzoom': 14
+        });
+
+        // Add sky layer for better 3D effect
+        map.addLayer({
+            'id': 'sky',
+            'type': 'sky',
+            'paint': {
+                'sky-type': 'atmosphere',
+                'sky-atmosphere-sun': [0.0, 0.0],
+                'sky-atmosphere-sun-intensity': 15
+            }
+        });
+    });
+
+    // Dark/Light mode toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const htmlElement = document.documentElement;
+
+    darkModeToggle.addEventListener('click', () => {
+        if (currentStyle === 'light') {
+            // Switch to dark mode
+            map.setStyle('mapbox://styles/mapbox/dark-v11');
+            htmlElement.classList.add('dark');
+            currentStyle = 'dark';
+            darkModeToggle.querySelector('.material-symbols-outlined').textContent = 'light_mode';
+        } else {
+            // Switch to light mode
+            map.setStyle('mapbox://styles/mapbox/streets-v12');
+            htmlElement.classList.remove('dark');
+            currentStyle = 'light';
+            darkModeToggle.querySelector('.material-symbols-outlined').textContent = 'dark_mode';
+        }
+
+        // Re-add terrain and buildings after style change
+        map.once('style.load', () => {
+            // Re-add 3D terrain source
+            map.addSource('mapbox-dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                'tileSize': 512,
+                'maxzoom': 14
+            });
+
+            // Re-add sky layer
+            map.addLayer({
+                'id': 'sky',
+                'type': 'sky',
+                'paint': {
+                    'sky-type': 'atmosphere',
+                    'sky-atmosphere-sun': [0.0, 0.0],
+                    'sky-atmosphere-sun-intensity': 15
+                }
+            });
+
+            // Re-apply 3D settings if enabled
+            if (is3DMode) {
+                map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+                map.setPitch(60);
+            }
+        });
+    });
+
+    // 3D mode toggle
+    const toggle3DBtn = document.getElementById('toggle3D');
+
+    toggle3DBtn.addEventListener('click', () => {
+        is3DMode = !is3DMode;
+
+        if (is3DMode) {
+            // Enable 3D mode
+            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+            map.easeTo({
+                pitch: 60,
+                bearing: 0,
+                duration: 1000
+            });
+            toggle3DBtn.classList.add('bg-primary', 'text-white');
+            toggle3DBtn.classList.remove('bg-card-light', 'dark:bg-card-dark');
+        } else {
+            // Disable 3D mode
+            map.setTerrain(null);
+            map.easeTo({
+                pitch: 0,
+                bearing: 0,
+                duration: 1000
+            });
+            toggle3DBtn.classList.remove('bg-primary', 'text-white');
+            toggle3DBtn.classList.add('bg-card-light', 'dark:bg-card-dark');
+        }
+    });
+
+    // Add marker example (Hanoi)
+    new mapboxgl.Marker({ color: '#34a853' })
+        .setLngLat([105.8342, 21.0278])
+        .setPopup(new mapboxgl.Popup().setHTML('<h3 class="font-bold">Hà Nội</h3><p>Thủ đô Việt Nam</p>'))
+        .addTo(map);
+
+    // Sample data points (you can replace with your API data)
+    const samplePoints = [
+        { coords: [105.8412, 21.0245], name: 'Hồ Gươm', category: 'Danh lam' },
+        { coords: [105.8352, 21.0285], name: 'Văn Miếu', category: 'Di tích' },
+        { coords: [105.8432, 21.0355], name: 'Nhà Hát Lớn', category: 'Văn hóa' }
+    ];
+
+    // Add sample markers
+    samplePoints.forEach(point => {
+        new mapboxgl.Marker({ color: '#ea4335' })
+            .setLngLat(point.coords)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3 class="font-bold">${point.name}</h3><p>${point.category}</p>`))
+            .addTo(map);
+    });
+</script>
+
 </body></html>

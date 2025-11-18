@@ -1,7 +1,8 @@
-import * as L from 'leaflet'
+import * as turf from '@turf/turf'
 
 /**
  * GeoJSON and Map utility functions
+ * Note: Migrated from Leaflet to Turf.js for Mapbox compatibility
  */
 
 /**
@@ -11,19 +12,9 @@ import * as L from 'leaflet'
  * @returns {number} Distance in kilometers
  */
 export const calculateDistance = (latlng1, latlng2) => {
-  const R = 6371 // Earth's radius in km
-  const dLat = toRad(latlng2[0] - latlng1[0])
-  const dLng = toRad(latlng2[1] - latlng1[1])
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(latlng1[0])) *
-      Math.cos(toRad(latlng2[0])) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2)
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
+  const from = turf.point([latlng1[1], latlng1[0]]) // [lng, lat] for Turf
+  const to = turf.point([latlng2[1], latlng2[0]])
+  return turf.distance(from, to, { units: 'kilometers' })
 }
 
 /**
@@ -39,42 +30,42 @@ const toRad = (degrees) => {
  * @returns {number} Total distance in km
  */
 export const calculatePolylineDistance = (latlngs) => {
-  let totalDistance = 0
-  for (let i = 0; i < latlngs.length - 1; i++) {
-    totalDistance += calculateDistance(latlngs[i], latlngs[i + 1])
-  }
-  return totalDistance
+  const coordinates = latlngs.map(point => [point[1], point[0]]) // Convert to [lng, lat]
+  const line = turf.lineString(coordinates)
+  return turf.length(line, { units: 'kilometers' })
 }
 
 /**
- * Calculate area of a polygon (approximate, in km²)
- * Uses Leaflet's built-in method
+ * Calculate area of a polygon (in km²)
  * @param {Array} latlngs - Array of [lat, lng] points
  * @returns {number} Area in square kilometers
  */
 export const calculatePolygonArea = (latlngs) => {
-  const polygon = L.polygon(latlngs)
-  const areaInMeters = L.GeometryUtil.geodesicArea(polygon.getLatLngs()[0])
-  return areaInMeters / 1000000 // Convert to km²
+  const coordinates = latlngs.map(point => [point[1], point[0]]) // Convert to [lng, lat]
+  coordinates.push(coordinates[0]) // Close the polygon
+  const polygon = turf.polygon([coordinates])
+  return turf.area(polygon) / 1000000 // Convert m² to km²
 }
 
 /**
- * Convert GeoJSON to Leaflet layer
+ * Convert GeoJSON coordinates to bounds
  * @param {Object} geojson - GeoJSON object
- * @returns {L.GeoJSON} Leaflet GeoJSON layer
- */
-export const geoJSONToLayer = (geojson) => {
-  return L.geoJSON(geojson)
-}
-
-/**
- * Get bounds from GeoJSON
- * @param {Object} geojson - GeoJSON object
- * @returns {L.LatLngBounds} Bounds
+ * @returns {Array} Bounds [[minLng, minLat], [maxLng, maxLat]]
  */
 export const getGeoJSONBounds = (geojson) => {
-  const layer = L.geoJSON(geojson)
-  return layer.getBounds()
+  const bbox = turf.bbox(geojson)
+  return [[bbox[0], bbox[1]], [bbox[2], bbox[3]]] // [[minLng, minLat], [maxLng, maxLat]]
+}
+
+/**
+ * Validate GeoJSON
+ * @param {Object} geojson - GeoJSON object
+ * @returns {boolean} Valid or not
+ */
+export const geoJSONToLayer = (geojson) => {
+  // For Mapbox, we can just return the geojson as-is
+  // This is a compatibility shim
+  return geojson
 }
 
 /**

@@ -1,6 +1,6 @@
 # 🗺️ WebGIS Educational Platform
 
-Nền tảng giáo dục GIS tương tác với Django + PostGIS + React + Leaflet.
+Nền tảng giáo dục GIS tương tác với Django + PostGIS + React + Mapbox GL JS.
 
 ![Platform](https://img.shields.io/badge/Platform-Docker-blue)
 ![Python](https://img.shields.io/badge/Python-3.10-green)
@@ -15,7 +15,9 @@ Nền tảng giáo dục GIS tương tác với Django + PostGIS + React + Leafl
 WebGIS Educational Platform là nền tảng học tập GIS (Hệ thống Thông tin Địa lý) tương tác, cho phép:
 
 - 📍 Quản lý và hiển thị dữ liệu không gian địa lý (Points, Lines, Polygons)
-- 🗺️ Bản đồ tương tác với Leaflet
+- 🗺️ Bản đồ tương tác 2D/3D với Mapbox GL JS
+- 🏔️ Hiển thị địa hình 3D với terrain và buildings
+- 🌓 Chế độ Dark/Light mode
 - 👥 Hệ thống quản lý lớp học (giáo viên/học sinh)
 - 📚 Bài giảng GIS tương tác
 - ✅ Kiểm tra và đánh giá tự động
@@ -163,8 +165,8 @@ Xem thêm ví dụ trong file **`test_all_geometry_types.sql`**
 
 ```
 ┌─────────────────┐
-│   Frontend      │  React + Vite + Leaflet
-│  localhost:7749 │  Hiển thị bản đồ tương tác
+│   Frontend      │  React + Vite + Mapbox GL JS
+│  localhost:7749 │  Bản đồ tương tác 2D/3D
 └────────┬────────┘
          │ HTTP/REST
 ┌────────▼────────┐
@@ -232,14 +234,17 @@ docker-compose down -v
 ### Frontend:
 - **React 18** - UI framework
 - **Vite** - Build tool
-- **Leaflet** - Interactive maps
-- **React Leaflet** - React bindings
+- **Mapbox GL JS** - Interactive 2D/3D maps
+- **React Map GL** - React bindings for Mapbox
 - **Axios** - HTTP client
+- **Tailwind CSS** - Utility-first CSS framework
 
 ### Infrastructure:
 - **Docker** - Containerization
 - **PostgreSQL 14** - Database
 - **pgAdmin 4** - Database management
+
+> **Lưu ý:** Thư mục `frontend/mau_html/` chứa các file HTML templates demo, không phải production code. Frontend chính thức sử dụng React + Vite + Mapbox GL JS.
 
 ---
 
@@ -337,6 +342,26 @@ Educational purposes only.
 
 ---
 
-**Phát triển với ❤️ bằng Django, GeoDjango, PostGIS, React & Leaflet**
+## 🗺️ Tính Năng Mapbox
+
+### 2D/3D Visualization
+- **Chế độ 2D**: Bản đồ phẳng truyền thống
+- **Chế độ 3D**: Hiển thị địa hình và tòa nhà 3D với terrain exaggeration
+- **Toggle nhanh**: Chuyển đổi mượt mà giữa 2D và 3D
+
+### Map Styles
+- **Light Mode**: Bản đồ sáng phong cách streets
+- **Dark Mode**: Bản đồ tối dễ nhìn
+- **Satellite**: Ảnh vệ tinh kết hợp đường
+- **Outdoors**: Phong cách địa hình ngoài trời
+
+### Mapbox API Key
+API key đã được cấu hình sẵn trong code. Nếu muốn thay đổi, cập nhật ở:
+- `frontend/src/constants/map.constants.js`
+- `frontend/src/components/map/MapboxMap/index.jsx`
+
+---
+
+**Phát triển với ❤️ bằng Django, GeoDjango, PostGIS, React & Mapbox GL JS**
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
