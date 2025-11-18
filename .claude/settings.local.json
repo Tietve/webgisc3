@@ -71,7 +71,15 @@
       "Bash(fi)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYyODk0MzcyLCJpYXQiOjE3NjI4OTA3NzIsImp0aSI6ImE3Y2U1MWNiMGE4YjRjOWNhYjc0OTk5MDgzZmY1ZWNjIiwidXNlcl9pZCI6IjE2MWQ0NGQwLWIyODQtNGE3Zi1hNThiLTY5NTI0ODc5MjVjZSJ9.N2syRlyLmVSMx7Z2TgbCLEkS5UghUjrkVbXhhDloacY\")",
       "Bash(start \"\" \"file:///D:/Webgis/frontend/mau_html/viewmap.html\")",
-      "Bash(start http://localhost:7749)"
+      "Bash(start http://localhost:7749)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "SlashCommand(/test)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(timeout 30 bash -c 'while ! python -c \"\"import requests\"\" 2>/dev/null; do sleep 1; done')",
+      "Bash(npm run build:*)",
+      "Bash(powershell:*)",
+      "Bash(NUL)"
     ],
     "deny": [],
     "ask": []

@@ -63,8 +63,10 @@ npm run dev
 | Email | Password | Vai trò |
 |-------|----------|---------|
 | admin@webgis.com | admin123 | Admin |
-| teacher01@webgis.com | teacher123 | Giáo viên |
-| student01@webgis.com | student123 | Học sinh |
+| teacher@webgis.com | teacher123 | Giáo viên |
+| student1@webgis.com | student123 | Học sinh |
+
+> **Lưu ý:** Nếu cần thêm tài khoản, sử dụng Django Admin: http://localhost:8080/admin/
 
 ---
 
