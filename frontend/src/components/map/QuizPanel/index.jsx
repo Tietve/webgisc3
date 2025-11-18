@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, CheckCircle, XCircle, ArrowLeft, ArrowRight, Trophy, RotateCcw, Sparkles, Loader, AlertCircle } from 'lucide-react'
+import { X, CheckCircle, XCircle, ArrowLeft, ArrowRight, Trophy, RotateCcw, Sparkles, Loader, AlertCircle, FileText, BookOpen } from 'lucide-react'
 import Panel from '../../ui/Panel'
-import { quizService } from '@services'
+import { quizService, assignmentService, classroomService } from '@services'
+import { useAuth } from '@hooks'
 
 /**
- * QuizPanel Component - Modern interactive quiz panel
+ * QuizPanel Component - Modern interactive quiz/assignment panel with tabs
  *
  * Features:
+ * - Tab navigation: [Quiz] [Assignments]
+ * - Quiz tab: Interactive quiz with scoring
+ * - Assignments tab: Aggregated assignments from all enrolled classrooms
  * - Fetch quiz data from API
  * - Smooth question transitions with slide animations
  * - Progress bar with gradient
@@ -18,6 +22,8 @@ import { quizService } from '@services'
  * - Glassmorphism backdrop
  */
 const QuizPanel = ({ isOpen, onClose, quizId }) => {
+  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState('quiz') // 'quiz' or 'assignments'
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState(null)
   const [answers, setAnswers] = useState({})
@@ -29,11 +35,22 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // Assignments state
+  const [assignments, setAssignments] = useState([])
+  const [loadingAssignments, setLoadingAssignments] = useState(false)
+  const [assignmentsError, setAssignmentsError] = useState(null)
+
   useEffect(() => {
     if (isOpen && quizId) {
       loadQuiz()
     }
   }, [isOpen, quizId])
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'assignments') {
+      loadAllAssignments()
+    }
+  }, [isOpen, activeTab])
 
   const loadQuiz = async () => {
     try {
@@ -46,6 +63,49 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
       setError(err.response?.data?.message || 'Failed to load quiz')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAllAssignments = async () => {
+    try {
+      setLoadingAssignments(true)
+      setAssignmentsError(null)
+
+      // Get all classrooms user is enrolled in
+      const classroomsData = await classroomService.list()
+      const classrooms = classroomsData.results || classroomsData || []
+
+      // Fetch assignments from all classrooms in parallel
+      const assignmentPromises = classrooms.map(async (classroom) => {
+        try {
+          const data = await assignmentService.list(classroom.id)
+          const assignmentsList = Array.isArray(data) ? data : (data.results || [])
+          // Add classroom name to each assignment for display
+          return assignmentsList.map(assignment => ({
+            ...assignment,
+            classroom_name: classroom.name,
+            classroom_id: classroom.id
+          }))
+        } catch (err) {
+          console.error(`Failed to load assignments for classroom ${classroom.id}:`, err)
+          return []
+        }
+      })
+
+      const allAssignments = await Promise.all(assignmentPromises)
+      // Flatten and sort by due_date
+      const flatAssignments = allAssignments.flat().sort((a, b) => {
+        if (!a.due_date) return 1
+        if (!b.due_date) return -1
+        return new Date(a.due_date) - new Date(b.due_date)
+      })
+
+      setAssignments(flatAssignments)
+    } catch (err) {
+      console.error('Error loading assignments:', err)
+      setAssignmentsError(err.response?.data?.message || 'Failed to load assignments')
+    } finally {
+      setLoadingAssignments(false)
     }
   }
 
@@ -114,6 +174,47 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
     setShowResults(false)
     setDirection(1)
     loadQuiz()
+  }
+
+  // Assignment helper functions
+  const getDeadlineStatus = (dueDate) => {
+    if (!dueDate) return 'none'
+    const now = new Date()
+    const deadline = new Date(dueDate)
+    const hoursUntil = (deadline - now) / (1000 * 60 * 60)
+
+    if (hoursUntil < 0) return 'overdue'
+    if (hoursUntil < 24) return 'urgent'
+    return 'upcoming'
+  }
+
+  const getDeadlineColor = (status) => {
+    switch (status) {
+      case 'overdue':
+        return 'bg-red-500/10 text-red-500 border-red-500'
+      case 'urgent':
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500'
+      case 'upcoming':
+        return 'bg-green-500/10 text-green-500 border-green-500'
+      default:
+        return 'bg-gray-500/10 text-gray-500 border-gray-500'
+    }
+  }
+
+  const formatTimeRemaining = (dueDate) => {
+    if (!dueDate) return 'No deadline'
+    const now = new Date()
+    const deadline = new Date(dueDate)
+    const diff = deadline - now
+
+    if (diff < 0) return 'Overdue'
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+
+    if (days > 0) return `${days}d ${hours}h`
+    if (hours > 0) return `${hours}h`
+    return 'Due soon'
   }
 
   if (!isOpen) return null
@@ -217,28 +318,71 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
         className="fixed top-0 right-0 h-full w-full md:w-[500px] bg-white dark:bg-gray-900 shadow-2xl z-[1002] overflow-y-auto flex flex-col"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 shadow-lg z-10">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Sparkles className="w-6 h-6" />
-                {quizData.title}
-              </h2>
-              <p className="text-orange-100 text-sm mt-1">{quizData.description}</p>
+        <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg z-10">
+          <div className="p-6 pb-0">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Sparkles className="w-6 h-6" />
+                  {activeTab === 'quiz' ? (quizData?.title || 'Quiz') : 'Assignments'}
+                </h2>
+                {activeTab === 'quiz' && quizData?.description && (
+                  <p className="text-orange-100 text-sm mt-1">{quizData.description}</p>
+                )}
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onClose}
+                className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors ml-2"
+              >
+                <X className="w-6 h-6" />
+              </motion.button>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.1, rotate: 90 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onClose}
-              className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors ml-2"
-            >
-              <X className="w-6 h-6" />
-            </motion.button>
+
+            {/* Tab Navigation */}
+            <div className="flex gap-2 mb-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setActiveTab('quiz')}
+                className={`
+                  flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-semibold transition-all
+                  ${activeTab === 'quiz'
+                    ? 'bg-white text-orange-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                  }
+                `}
+              >
+                <BookOpen className="w-4 h-4" />
+                Quiz
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setActiveTab('assignments')}
+                className={`
+                  flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-semibold transition-all
+                  ${activeTab === 'assignments'
+                    ? 'bg-white text-orange-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                  }
+                `}
+              >
+                <FileText className="w-4 h-4" />
+                Assignments
+                {assignments.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-orange-600 text-white rounded-full">
+                    {assignments.length}
+                  </span>
+                )}
+              </motion.button>
+            </div>
           </div>
 
-          {/* Progress */}
-          {!showResults && (
-            <div>
+          {/* Progress (Quiz tab only) */}
+          {activeTab === 'quiz' && !showResults && quizData && (
+            <div className="px-6 pb-4">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span>
                   Question {currentQuestion + 1} of {quizData.questions.length}
@@ -263,7 +407,110 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
         {/* Content */}
         <div className="flex-1 p-6">
           <AnimatePresence mode="wait" custom={direction}>
-            {!showResults ? (
+            {activeTab === 'assignments' ? (
+              /* Assignments Tab Content */
+              <motion.div
+                key="assignments"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {loadingAssignments ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
+                      <p className="text-gray-600 dark:text-gray-400">Đang tải bài tập...</p>
+                    </div>
+                  </div>
+                ) : assignmentsError ? (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+                      <AlertCircle className="w-5 h-5" />
+                      <span>{assignmentsError}</span>
+                    </div>
+                  </div>
+                ) : assignments.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">📝</div>
+                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Chưa có bài tập nào
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Bài tập sẽ xuất hiện ở đây khi giáo viên tạo
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {assignments.map((assignment, index) => {
+                      const deadlineStatus = getDeadlineStatus(assignment.due_date)
+                      const deadlineColor = getDeadlineColor(deadlineStatus)
+
+                      return (
+                        <motion.div
+                          key={assignment.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          whileHover={{ scale: 1.01, y: -2 }}
+                          className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:shadow-md transition-all"
+                          onClick={() => {
+                            // TODO: Open assignment detail/submit modal
+                            console.log('Open assignment:', assignment.id)
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                              <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                {assignment.title}
+                              </h4>
+                              {assignment.classroom_name && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                  📚 {assignment.classroom_name}
+                                </p>
+                              )}
+                              {assignment.description && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                                  {assignment.description}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {assignment.due_date && (
+                                  <span className={`text-xs px-2 py-1 rounded-full border ${deadlineColor}`}>
+                                    ⏰ {formatTimeRemaining(assignment.due_date)}
+                                  </span>
+                                )}
+                                {assignment.max_score && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    🏆 {assignment.max_score} điểm
+                                  </span>
+                                )}
+                                {/* Submission status */}
+                                {assignment.submission_status === 'submitted' && (
+                                  <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Đã nộp
+                                  </span>
+                                )}
+                                {assignment.submission_status === 'graded' && (
+                                  <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                    <Trophy className="w-3 h-3" />
+                                    Đã chấm: {assignment.grade?.score}/{assignment.max_score}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            ) : !showResults ? (
               <motion.div
                 key={currentQuestion}
                 custom={direction}
