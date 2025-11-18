@@ -5,6 +5,7 @@ const MapTopToolbar = ({ activePanel, onTogglePanel }) => {
     { id: 'tools', icon: '🛠️', label: 'Tools', title: 'Công cụ vẽ & phân tích' },
     { id: 'layers', icon: '🗺️', label: 'Layers', title: 'Lớp bản đồ' },
     { id: 'lessons', icon: '📚', label: 'Lessons', title: 'Bài học tương tác' },
+    { id: 'assignments', icon: '📝', label: 'Assignments', title: 'Bài tập & nộp bài' },
   ]
 
   return (

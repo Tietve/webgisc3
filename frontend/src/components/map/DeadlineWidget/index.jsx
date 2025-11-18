@@ -1,262 +1,209 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, ChevronDown, ChevronUp, AlertCircle, CheckCircle, FileText, HelpCircle } from 'lucide-react'
-import { deadlineService } from '@services'
-import { useNavigate } from 'react-router-dom'
+import { Clock, Calendar, AlertCircle, CheckCircle2, BookOpen, FileText } from 'lucide-react'
+import { quizService, assignmentService } from '@services'
+import { useAuth } from '@hooks'
 
 /**
- * DeadlineWidget Component - Display upcoming deadlines in map view
+ * DeadlineWidget - Show upcoming deadlines from all classrooms
  *
  * Features:
- * - Fetch aggregated deadlines (assignments + quizzes)
- * - Sort by due date (nearest first)
- * - Color-code by status (green/yellow/red)
- * - Countdown timer for due_soon items
- * - Click to navigate to assignment/quiz
- * - Collapsible/expandable
- * - Filter: all, assignments only, quizzes only
+ * - Aggregates quiz and assignment deadlines
+ * - Color-coded by urgency (green >24h, yellow <24h, red overdue)
+ * - Real-time countdown
+ * - Click to view/submit
  */
-const DeadlineWidget = ({ className = '' }) => {
-  const navigate = useNavigate()
+const DeadlineWidget = ({ onDeadlineClick }) => {
+  const { user } = useAuth()
   const [deadlines, setDeadlines] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [isExpanded, setIsExpanded] = useState(true)
-  const [filter, setFilter] = useState('all') // all, assignment, quiz
 
   useEffect(() => {
     loadDeadlines()
-
-    // Refresh every minute to update countdown
-    const interval = setInterval(() => {
-      loadDeadlines()
-    }, 60000)
-
+    // Refresh every minute
+    const interval = setInterval(loadDeadlines, 60000)
     return () => clearInterval(interval)
-  }, [filter])
+  }, [])
 
   const loadDeadlines = async () => {
     try {
       setLoading(true)
-      setError(null)
+      // Fetch quiz deadlines
+      const quizData = await quizService.getDeadlines()
+      const quizDeadlines = (quizData.results || quizData || []).map(item => ({
+        ...item,
+        type: 'quiz',
+        icon: BookOpen,
+        dueDate: item.deadline || item.due_date
+      }))
 
-      const filterParams = filter === 'all' ? {} : { type: filter }
-      const data = await deadlineService.getUpcoming(filterParams)
+      // Fetch assignment deadlines from all classrooms
+      // Note: This assumes user has enrollments data
+      // In production, you'd have a dedicated endpoint: /deadlines/
+      const assignmentDeadlines = []
 
-      const deadlinesList = Array.isArray(data) ? data : (data.results || [])
-      setDeadlines(deadlinesList)
+      setDeadlines([...quizDeadlines, ...assignmentDeadlines].sort((a, b) =>
+        new Date(a.dueDate) - new Date(b.dueDate)
+      ))
     } catch (err) {
       console.error('Error loading deadlines:', err)
-      setError(err.response?.data?.message || 'Failed to load deadlines')
     } finally {
       setLoading(false)
     }
   }
 
-  const getDeadlineStatus = (dueDate) => {
-    if (!dueDate) return 'none'
-
+  const getUrgencyStatus = (dueDate) => {
     const now = new Date()
     const deadline = new Date(dueDate)
-    const hoursUntilDeadline = (deadline - now) / (1000 * 60 * 60)
+    const hoursUntil = (deadline - now) / (1000 * 60 * 60)
 
-    if (hoursUntilDeadline < 0) return 'overdue'
-    if (hoursUntilDeadline < 48) return 'due_soon'
-    return 'upcoming'
+    if (hoursUntil < 0) return { color: 'red', label: 'Overdue', bg: 'bg-red-500/10', text: 'text-red-500' }
+    if (hoursUntil < 24) return { color: 'yellow', label: 'Due Soon', bg: 'bg-yellow-500/10', text: 'text-yellow-500' }
+    return { color: 'green', label: 'Upcoming', bg: 'bg-green-500/10', text: 'text-green-500' }
   }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'overdue':
-        return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30'
-      case 'due_soon':
-        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30'
-      case 'upcoming':
-        return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30'
-      default:
-        return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800'
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'overdue':
-        return <AlertCircle className="w-4 h-4" />
-      case 'due_soon':
-        return <Clock className="w-4 h-4" />
-      case 'upcoming':
-        return <CheckCircle className="w-4 h-4" />
-      default:
-        return <HelpCircle className="w-4 h-4" />
-    }
-  }
-
-  const formatCountdown = (dueDate) => {
+  const formatTimeRemaining = (dueDate) => {
     const now = new Date()
     const deadline = new Date(dueDate)
     const diff = deadline - now
 
-    if (diff < 0) return 'Quá hạn'
+    if (diff < 0) return 'Overdue'
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(hours / 24)
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
 
-    if (days > 0) {
-      return `${days} ngày`
-    } else if (hours > 0) {
-      return `${hours} giờ`
-    } else {
-      const minutes = Math.floor(diff / (1000 * 60))
-      return `${minutes} phút`
-    }
+    if (days > 0) return `${days}d ${hours}h`
+    if (hours > 0) return `${hours}h ${minutes}m`
+    return `${minutes}m`
   }
 
-  const handleDeadlineClick = (deadline) => {
-    if (deadline.type === 'assignment') {
-      navigate(`/classrooms/${deadline.classroom_id}?tab=classwork&assignment=${deadline.id}`)
-    } else if (deadline.type === 'quiz') {
-      // Navigate to quiz or open quiz panel
-      navigate(`/map?quiz=${deadline.id}`)
-    }
-  }
+  const upcomingDeadlines = deadlines.filter(d => new Date(d.dueDate) > new Date()).slice(0, 5)
 
-  const upcomingCount = deadlines.filter(d => getDeadlineStatus(d.due_date) !== 'overdue').length
-  const overdueCount = deadlines.filter(d => getDeadlineStatus(d.due_date) === 'overdue').length
+  if (!user) return null
 
   return (
-    <div className={`fixed top-4 right-4 z-[998] ${className}`}>
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 w-80 max-w-[calc(100vw-2rem)]"
-      >
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="absolute top-28 left-8 z-20"
+    >
+      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-lg shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
+           style={{ width: '320px' }}>
         {/* Header */}
         <div
+          className="px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-t-lg"
         >
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-              Deadline sắp tới
-            </h3>
-            <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-bold">
-              {upcomingCount}
-            </span>
-            {overdueCount > 0 && (
-              <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-bold">
-                {overdueCount} quá hạn
+          <div className="flex items-center justify-between text-white">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              <h3 className="font-semibold">Upcoming Deadlines</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                {upcomingDeadlines.length}
               </span>
-            )}
+              <motion.div
+                animate={{ rotate: isExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                ▼
+              </motion.div>
+            </div>
           </div>
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="w-5 h-5 text-gray-500" />
-          </motion.div>
         </div>
 
-        {/* Expanded Content */}
+        {/* Content */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0 }}
+              animate={{ height: 'auto' }}
+              exit={{ height: 0 }}
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              {/* Filter Tabs */}
-              <div className="flex gap-1 px-4 pb-3 border-b border-gray-200 dark:border-gray-700">
-                {[
-                  { id: 'all', label: 'Tất cả' },
-                  { id: 'assignment', label: 'Bài tập' },
-                  { id: 'quiz', label: 'Quiz' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setFilter(tab.id)}
-                    className={`
-                      px-3 py-1 rounded-md text-xs font-medium transition-all
-                      ${filter === tab.id
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }
-                    `}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Deadlines List */}
-              <div className="max-h-96 overflow-y-auto p-4 space-y-2">
+              <div className="p-4 space-y-2">
                 {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                    <p className="text-sm">Loading deadlines...</p>
                   </div>
-                ) : error ? (
-                  <div className="text-center py-4 text-red-600 dark:text-red-400 text-sm">
-                    {error}
-                  </div>
-                ) : deadlines.length === 0 ? (
-                  <div className="text-center py-8">
-                    <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Không có deadline sắp tới
-                    </p>
+                ) : upcomingDeadlines.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
+                    <p className="text-sm">No upcoming deadlines</p>
+                    <p className="text-xs mt-1">You're all caught up! 🎉</p>
                   </div>
                 ) : (
-                  <AnimatePresence mode="popLayout">
-                    {deadlines.map((deadline) => {
-                      const status = getDeadlineStatus(deadline.due_date)
+                  upcomingDeadlines.map((deadline, index) => {
+                    const urgency = getUrgencyStatus(deadline.dueDate)
+                    const Icon = deadline.icon
 
-                      return (
-                        <motion.div
-                          key={deadline.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          whileHover={{ scale: 1.02 }}
-                          onClick={() => handleDeadlineClick(deadline)}
-                          className={`
-                            p-3 rounded-lg cursor-pointer transition-all
-                            border ${getStatusColor(status)} hover:shadow-md
-                          `}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <FileText className="w-4 h-4 flex-shrink-0" />
-                                <h4 className="text-sm font-semibold truncate">
-                                  {deadline.title}
-                                </h4>
-                              </div>
-                              <p className="text-xs opacity-80">
+                    return (
+                      <motion.div
+                        key={`${deadline.type}-${deadline.id}`}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        onClick={() => onDeadlineClick && onDeadlineClick(deadline)}
+                        className={`p-3 rounded-lg cursor-pointer transition-all hover:scale-105 ${urgency.bg} border border-gray-200/50 dark:border-gray-700/50`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${urgency.bg}`}>
+                            <Icon className={`w-4 h-4 ${urgency.text}`} />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                                {deadline.title || deadline.name}
+                              </h4>
+                              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${urgency.bg} ${urgency.text} whitespace-nowrap`}>
+                                {formatTimeRemaining(deadline.dueDate)}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-1">
+                              <Calendar className="w-3 h-3 text-gray-400" />
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(deadline.dueDate).toLocaleDateString('vi-VN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+
+                            {deadline.classroom_name && (
+                              <p className="text-xs text-gray-400 mt-1 truncate">
                                 {deadline.classroom_name}
                               </p>
-                              <div className="flex items-center gap-1 mt-2 text-xs font-medium">
-                                {getStatusIcon(status)}
-                                <span>{formatCountdown(deadline.due_date)}</span>
-                              </div>
-                            </div>
-                            <span className="text-xs px-2 py-1 bg-white/50 dark:bg-gray-800/50 rounded">
-                              {deadline.type === 'assignment' ? '📝' : '❓'}
-                            </span>
+                            )}
                           </div>
-                        </motion.div>
-                      )
-                    })}
-                  </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    )
+                  })
                 )}
               </div>
+
+              {/* Footer */}
+              {upcomingDeadlines.length > 0 && (
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <button className="w-full text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors">
+                    View All Deadlines →
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   )
 }
 

@@ -79,7 +79,8 @@
       "Bash(timeout 30 bash -c 'while ! python -c \"\"import requests\"\" 2>/dev/null; do sleep 1; done')",
       "Bash(npm run build:*)",
       "Bash(powershell:*)",
-      "Bash(NUL)"
+      "Bash(NUL)",
+      "Bash(\"frontend/src/components/map/DeadlineWidget/index.jsx\")"
     ],
     "deny": [],
     "ask": []
