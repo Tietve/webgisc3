@@ -241,10 +241,10 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Only classroom owner can create announcements
-        if classroom.teacher != request.user:
+        # Only classroom owner or admin can create announcements
+        if classroom.teacher != request.user and not request.user.is_staff:
             return Response(
-                {'error': 'Only classroom owner can create announcements'},
+                {'error': 'Only classroom owner or admin can create announcements'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
