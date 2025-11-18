@@ -9,8 +9,6 @@ import LayersPanel from '@components/map/LayersPanel'
 import LessonsPanel from '@components/map/LessonsPanel'
 import QuizFloatingButton from '@components/map/QuizFloatingButton'
 import QuizPanel from '@components/map/QuizPanel'
-import DeadlineWidget from '@components/map/DeadlineWidget'
-import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
 
 const MapViewerPage = () => {
@@ -274,14 +272,6 @@ const MapViewerPage = () => {
           </button>
         </div>
 
-        {/* Deadline Widget - Always visible */}
-        <DeadlineWidget
-          onDeadlineClick={(deadline) => {
-            console.log('Deadline clicked:', deadline)
-            // TODO: Navigate to assignment/quiz
-          }}
-        />
-
         {/* Panel Dropdowns */}
         {activePanel === 'tools' && <ToolsPanel />}
         {activePanel === 'layers' && (
@@ -292,15 +282,6 @@ const MapViewerPage = () => {
           />
         )}
         {activePanel === 'lessons' && <LessonsPanel />}
-        {activePanel === 'assignments' && (
-          <AssignmentList
-            classroomId={null}
-            onAssignmentClick={(assignment) => {
-              console.log('Assignment clicked:', assignment)
-              // TODO: Navigate to assignment detail
-            }}
-          />
-        )}
 
         {/* Quiz Floating Button */}
         <QuizFloatingButton

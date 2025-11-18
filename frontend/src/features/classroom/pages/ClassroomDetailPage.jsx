@@ -203,8 +203,8 @@ const ClassroomDetailPage = () => {
     }
   }
 
-  // Check if current user is the owner of this classroom
-  const isOwner = classroom?.teacher_email === user?.email
+  // Check if current user is the owner of this classroom OR is admin
+  const isOwner = classroom?.teacher_email === user?.email || user?.role === 'admin'
 
   // Generate random gradient for classroom header (same function as ClassroomsPage)
   const getClassroomGradient = (classroomId) => {
