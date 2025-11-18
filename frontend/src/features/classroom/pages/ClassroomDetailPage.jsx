@@ -25,6 +25,17 @@ const ClassroomDetailPage = () => {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false)
   const [showGradingInterface, setShowGradingInterface] = useState(false)
 
+  // Assignment creation modal states
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: '',
+    description: '',
+    due_date: '',
+    max_score: 100,
+    attachment: null
+  })
+  const [creatingAssignment, setCreatingAssignment] = useState(false)
+
   useEffect(() => {
     loadClassroom()
     loadAnnouncements()
@@ -121,6 +132,75 @@ const ClassroomDetailPage = () => {
     setSelectedAssignment(null)
     setShowSubmissionForm(false)
     setShowGradingInterface(false)
+  }
+
+  const handleCreateAssignment = async (e) => {
+    e.preventDefault()
+
+    if (!assignmentForm.title || !assignmentForm.due_date) {
+      alert('Vui lòng điền đầy đủ thông tin bài tập')
+      return
+    }
+
+    try {
+      setCreatingAssignment(true)
+
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('title', assignmentForm.title)
+      formData.append('description', assignmentForm.description)
+      formData.append('due_date', assignmentForm.due_date)
+      formData.append('max_score', assignmentForm.max_score)
+
+      if (assignmentForm.attachment) {
+        formData.append('attachment', assignmentForm.attachment)
+      }
+
+      await assignmentService.create(id, formData)
+
+      // Reset form and close modal
+      setAssignmentForm({
+        title: '',
+        description: '',
+        due_date: '',
+        max_score: 100,
+        attachment: null
+      })
+      setShowAssignmentModal(false)
+
+      // Refresh assignment list (AssignmentList component will reload)
+      // Trigger a small state change to force AssignmentList to reload
+      setActiveTab('classwork')
+    } catch (error) {
+      console.error('Error creating assignment:', error)
+      alert('Không thể tạo bài tập. Vui lòng thử lại.')
+    } finally {
+      setCreatingAssignment(false)
+    }
+  }
+
+  const handleAssignmentFormChange = (field, value) => {
+    setAssignmentForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // Validate file type and size
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(file.type)) {
+        alert('Chỉ chấp nhận file PDF, DOC, DOCX')
+        return
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB
+        alert('File không được vượt quá 10MB')
+        return
+      }
+      setAssignmentForm(prev => ({ ...prev, attachment: file }))
+    }
   }
 
   // Check if current user is the owner of this classroom
@@ -369,7 +449,10 @@ const ClassroomDetailPage = () => {
                     {/* Create Assignment Button - Only show for owner */}
                     {isOwner && (
                       <div className="flex justify-end">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200">
+                        <button
+                          onClick={() => setShowAssignmentModal(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
+                        >
                           <span className="text-xl">➕</span>
                           <span className="font-medium">Tạo bài tập</span>
                         </button>
@@ -478,6 +561,169 @@ const ClassroomDetailPage = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Assignment Creation Modal */}
+        {showAssignmentModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl m-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 className="text-xl font-bold text-gray-900">📝 Tạo bài tập mới</h3>
+                <button
+                  onClick={() => {
+                    setShowAssignmentModal(false)
+                    setAssignmentForm({
+                      title: '',
+                      description: '',
+                      due_date: '',
+                      max_score: 100,
+                      attachment: null
+                    })
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <span className="text-2xl">×</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateAssignment} className="p-6 space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tiêu đề <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={assignmentForm.title}
+                    onChange={(e) => handleAssignmentFormChange('title', e.target.value)}
+                    placeholder="VD: Bài tập về bản đồ địa hình"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mô tả
+                  </label>
+                  <textarea
+                    value={assignmentForm.description}
+                    onChange={(e) => handleAssignmentFormChange('description', e.target.value)}
+                    placeholder="Mô tả chi tiết về bài tập..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    rows={4}
+                  />
+                </div>
+
+                {/* Due Date & Max Score */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Hạn nộp <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={assignmentForm.due_date}
+                      onChange={(e) => handleAssignmentFormChange('due_date', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Điểm tối đa
+                    </label>
+                    <input
+                      type="number"
+                      value={assignmentForm.max_score}
+                      onChange={(e) => handleAssignmentFormChange('max_score', parseFloat(e.target.value))}
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* File Attachment */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tài liệu đính kèm (PDF, DOC, DOCX - tối đa 10MB)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <label className="flex-1 cursor-pointer">
+                      <div className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors text-center">
+                        {assignmentForm.attachment ? (
+                          <div className="flex items-center justify-center gap-2 text-blue-600">
+                            <span>📄</span>
+                            <span className="text-sm font-medium">{assignmentForm.attachment.name}</span>
+                          </div>
+                        ) : (
+                          <div className="text-gray-500">
+                            <span className="text-2xl">📎</span>
+                            <p className="text-sm mt-1">Nhấp để chọn file</p>
+                          </div>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        accept=".pdf,.doc,.docx"
+                        className="hidden"
+                      />
+                    </label>
+                    {assignmentForm.attachment && (
+                      <button
+                        type="button"
+                        onClick={() => setAssignmentForm(prev => ({ ...prev, attachment: null }))}
+                        className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAssignmentModal(false)
+                      setAssignmentForm({
+                        title: '',
+                        description: '',
+                        due_date: '',
+                        max_score: 100,
+                        attachment: null
+                      })
+                    }}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!assignmentForm.title || !assignmentForm.due_date || creatingAssignment}
+                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                  >
+                    {creatingAssignment ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Đang tạo...
+                      </>
+                    ) : (
+                      <>
+                        <span>✓</span>
+                        Tạo bài tập
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
