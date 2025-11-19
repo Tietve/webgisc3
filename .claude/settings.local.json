@@ -80,7 +80,13 @@
       "Bash(npm run build:*)",
       "Bash(powershell:*)",
       "Bash(NUL)",
-      "Bash(\"frontend/src/components/map/DeadlineWidget/index.jsx\")"
+      "Bash(\"frontend/src/components/map/DeadlineWidget/index.jsx\")",
+      "SlashCommand(/plan Implement assignment features correctly based on user requirements:\n\n1. Quiz Panel (floating button bottom-right in map view):\n   - Add \"Assignments\" tab alongside existing quiz tabs\n   - Show all assignments from all enrolled classrooms\n   - Student can view and submit assignments\n   - Click to open submission form\n\n2. Classroom Detail Page:\n   - Teacher/Admin can create new assignments\n   - Upload PDF files as assignment materials  \n   - Set deadline, max score, description\n   - View list of assignments in this classroom\n   - See submission status (who submitted, who hasn't)\n\n3. Assignment Features:\n   - Student: View assignments, submit (text + PDF file), view grades\n   - Teacher: Create assignments, view submissions, grade with feedback\n   - Deadline tracking and notifications\n\n4. Missing API endpoints to implement:\n   - Check what's missing from backend\n   - Ensure all CRUD operations work\n   - File upload/download functionality\n\nPlease analyze current codebase and create detailed implementation plan.)",
+      "SlashCommand(/plan:*)",
+      "Bash(bash -c:*)",
+      "Bash(find:*)",
+      "Bash(Get-Date -UFormat \"%y%m%d\")",
+      "Skill(planning)"
     ],
     "deny": [],
     "ask": []

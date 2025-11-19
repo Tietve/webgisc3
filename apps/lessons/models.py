@@ -12,11 +12,58 @@ class Lesson(models.Model):
         id: Auto-incrementing primary key
         title: Title of the lesson
         description: Detailed description of the lesson
+        grade: Grade level (10, 11, 12)
+        difficulty: Difficulty level
+        duration: Estimated duration
+        icon: Icon name for the lesson
         created_at: Timestamp of lesson creation
         updated_at: Timestamp of last update
     """
+    GRADE_CHOICES = [
+        ('10', 'Lớp 10'),
+        ('11', 'Lớp 11'),
+        ('12', 'Lớp 12'),
+    ]
+
+    DIFFICULTY_CHOICES = [
+        ('Beginner', 'Cơ bản'),
+        ('Intermediate', 'Trung bình'),
+        ('Advanced', 'Nâng cao'),
+    ]
+
+    ICON_CHOICES = [
+        ('MapPin', 'Map Pin'),
+        ('Map', 'Map'),
+        ('Globe', 'Globe'),
+        ('Target', 'Target'),
+        ('BookOpen', 'Book Open'),
+    ]
+
     title = models.CharField(max_length=255, help_text='Title of the lesson')
     description = models.TextField(help_text='Detailed description of the lesson')
+    grade = models.CharField(
+        max_length=2,
+        choices=GRADE_CHOICES,
+        default='10',
+        help_text='Grade level for this lesson'
+    )
+    difficulty = models.CharField(
+        max_length=20,
+        choices=DIFFICULTY_CHOICES,
+        default='Beginner',
+        help_text='Difficulty level of the lesson'
+    )
+    duration = models.CharField(
+        max_length=50,
+        default='30 phút',
+        help_text='Estimated duration (e.g., "30 phút", "1 giờ")'
+    )
+    icon = models.CharField(
+        max_length=20,
+        choices=ICON_CHOICES,
+        default='BookOpen',
+        help_text='Icon to display for this lesson'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

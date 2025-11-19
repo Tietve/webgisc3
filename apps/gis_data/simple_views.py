@@ -100,13 +100,72 @@ class SimpleLayerViewSet(viewsets.ViewSet):
             filter_column = layer_info[1]
             filter_value = layer_info[2]
 
+        # Phát hiện schema của bảng để xác định cột geometry và name
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT column_name, data_type
+                FROM information_schema.columns
+                WHERE table_name = %s
+                AND table_schema = 'public'
+                ORDER BY ordinal_position
+            """, [table_name])
+
+            columns = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # Tìm geometry column (geom hoặc geometry)
+        geom_col = None
+        if 'geom' in columns:
+            geom_col = 'geom'
+        elif 'geometry' in columns:
+            geom_col = 'geometry'
+
+        if not geom_col:
+            return Response(
+                {"error": f"No geometry column found in table {table_name}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # Tìm name column (ten_tinh, name, hoặc title)
+        name_col = None
+        if 'ten_tinh' in columns:
+            name_col = 'ten_tinh'
+        elif 'name' in columns:
+            name_col = 'name'
+        elif 'title' in columns:
+            name_col = 'title'
+
+        # Tìm category column (nếu có)
+        category_col = 'category' if 'category' in columns else None
+
         # Xây dựng WHERE clause cho filter
-        where_clause = "WHERE geometry IS NOT NULL"
+        where_clause = f"WHERE {geom_col} IS NOT NULL"
         params = []
 
         if filter_column and filter_value:
             where_clause += f" AND {filter_column} = %s"
             params.append(filter_value)
+
+        # Xây dựng properties object dựa trên schema
+        properties_fields = ["'id', id"]
+
+        if name_col:
+            properties_fields.append(f"'name', {name_col}")
+
+        if category_col:
+            properties_fields.append(f"'category', COALESCE({category_col}, 'Unknown')")
+
+        # Thêm các trường đặc biệt cho provinces
+        if table_name == 'provinces':
+            if 'ma_tinh' in columns:
+                properties_fields.append("'ma_tinh', ma_tinh")
+            if 'dtich_km2' in columns:
+                properties_fields.append("'dtich_km2', dtich_km2")
+            if 'dan_so' in columns:
+                properties_fields.append("'dan_so', dan_so")
+            if 'loai' in columns:
+                properties_fields.append("'loai', loai")
+
+        properties_json = ", ".join(properties_fields)
 
         # Lấy dữ liệu từ database
         with connection.cursor() as cursor:
@@ -118,11 +177,9 @@ class SimpleLayerViewSet(viewsets.ViewSet):
                             'type', 'Feature',
                             'id', id,
                             'properties', json_build_object(
-                                'id', id,
-                                'name', name,
-                                'category', COALESCE(category, 'Unknown')
+                                {properties_json}
                             ),
-                            'geometry', ST_AsGeoJSON(geometry)::json
+                            'geometry', ST_AsGeoJSON({geom_col})::json
                         )
                     ), '[]'::json)
                 ) as geojson

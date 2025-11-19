@@ -178,6 +178,54 @@ class PolygonFeature(models.Model):
         return f"{self.name} ({self.category})"
 
 
+class Province(models.Model):
+    """
+    Model for Vietnam province boundaries with detailed administrative data.
+
+    This model stores the actual province boundary data from GeoJSON files
+    including detailed administrative information.
+    """
+    ma_tinh = models.CharField(max_length=10, unique=True, help_text='Province code')
+    ten_tinh = models.CharField(max_length=255, help_text='Province name')
+    sap_nhap = models.TextField(blank=True, help_text='Merged provinces information')
+    quy_mo = models.TextField(blank=True, help_text='Scale information (districts, wards)')
+    tru_so = models.TextField(blank=True, help_text='Headquarters address')
+    loai = models.CharField(max_length=50, blank=True, help_text='Type (Tỉnh/Thành phố)')
+    cap = models.IntegerField(default=1, help_text='Administrative level')
+    stt = models.IntegerField(default=0, help_text='Sort order')
+    dtich_km2 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Area in km²'
+    )
+    dan_so = models.IntegerField(null=True, blank=True, help_text='Population')
+    matdo_km2 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Population density per km²'
+    )
+    geom = models.MultiPolygonField(srid=4326, help_text='Province boundary geometry')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'provinces'
+        verbose_name = 'Province'
+        verbose_name_plural = 'Provinces'
+        ordering = ['stt', 'ten_tinh']
+        indexes = [
+            models.Index(fields=['ma_tinh'], name='idx_provinces_ma_tinh'),
+            models.Index(fields=['ten_tinh'], name='idx_provinces_ten_tinh'),
+        ]
+
+    def __str__(self):
+        return f"{self.ten_tinh} ({self.ma_tinh})"
+
+
 class Boundary(models.Model):
     """
     Model for storing administrative boundaries (districts, wards, etc.).

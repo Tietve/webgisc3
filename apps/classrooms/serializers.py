@@ -116,7 +116,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = ('id', 'classroom', 'author', 'author_email', 'author_name', 'content', 'created_at', 'updated_at')
-        read_only_fields = ('id', 'author', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'classroom', 'author', 'created_at', 'updated_at')
 
     def get_author_name(self, obj):
         """Get author's display name (email for now)."""

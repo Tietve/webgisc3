@@ -19,6 +19,7 @@ import { lessonService } from '@services'
  */
 const LessonsPanel = ({ onLessonSelect }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState('all')
+  const [selectedGrade, setSelectedGrade] = useState('all')
   const [lessons, setLessons] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -78,6 +79,13 @@ const LessonsPanel = ({ onLessonSelect }) => {
     { id: 'Advanced', label: 'Nâng cao', color: 'bg-red-500' },
   ]
 
+  const grades = [
+    { id: 'all', label: 'Tất cả', color: 'bg-gray-500', icon: '📚' },
+    { id: '10', label: 'Lớp 10', color: 'bg-blue-500', icon: '🎓' },
+    { id: '11', label: 'Lớp 11', color: 'bg-purple-500', icon: '🎓' },
+    { id: '12', label: 'Lớp 12', color: 'bg-pink-500', icon: '🎓' },
+  ]
+
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'Beginner':
@@ -91,10 +99,11 @@ const LessonsPanel = ({ onLessonSelect }) => {
     }
   }
 
-  const filteredLessons =
-    selectedDifficulty === 'all'
-      ? lessons
-      : lessons.filter((lesson) => lesson.difficulty === selectedDifficulty)
+  const filteredLessons = lessons.filter((lesson) => {
+    const matchesDifficulty = selectedDifficulty === 'all' || lesson.difficulty === selectedDifficulty
+    const matchesGrade = selectedGrade === 'all' || lesson.grade === selectedGrade
+    return matchesDifficulty && matchesGrade
+  })
 
   const renderLessonCard = (lesson) => {
     const Icon = lesson.icon
@@ -142,6 +151,11 @@ const LessonsPanel = ({ onLessonSelect }) => {
 
             {/* Meta info */}
             <div className="flex items-center gap-2 flex-wrap">
+              {lesson.grade && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  🎓 Lớp {lesson.grade}
+                </span>
+              )}
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getDifficultyColor(lesson.difficulty)}`}>
                 {lesson.difficulty}
               </span>
@@ -226,8 +240,33 @@ const LessonsPanel = ({ onLessonSelect }) => {
           </div>
         </div>
 
+        {/* Grade Filter */}
+        <CollapsibleSection title="Chọn lớp học" icon={BookOpen} defaultOpen={true}>
+          <div className="flex flex-wrap gap-2">
+            {grades.map((grade) => (
+              <motion.button
+                key={grade.id}
+                onClick={() => setSelectedGrade(grade.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`
+                  px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5
+                  ${
+                    selectedGrade === grade.id
+                      ? `${grade.color} text-white shadow-md`
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }
+                `}
+              >
+                <span>{grade.icon}</span>
+                {grade.label}
+              </motion.button>
+            ))}
+          </div>
+        </CollapsibleSection>
+
         {/* Difficulty Filter */}
-        <CollapsibleSection title="Lọc theo độ khó" icon={Filter} defaultOpen={true}>
+        <CollapsibleSection title="Lọc theo độ khó" icon={Filter} defaultOpen={false}>
           <div className="flex flex-wrap gap-2">
             {difficulties.map((difficulty) => (
               <motion.button
