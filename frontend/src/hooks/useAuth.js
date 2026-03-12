@@ -55,7 +55,7 @@ export const useAuth = () => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || '??ng nh?p th?t b?i',
+        error: error.response?.data?.detail || 'Đăng nhập thất bại',
       }
     }
   }
@@ -67,7 +67,7 @@ export const useAuth = () => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || '??ng k? th?t b?i',
+        error: error.response?.data?.detail || 'Đăng ký thất bại',
       }
     }
   }

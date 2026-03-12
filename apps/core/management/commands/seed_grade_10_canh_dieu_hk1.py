@@ -1,5 +1,5 @@
 """
-Seed curated ??a l? 10 - C?nh Di?u - H?c k? 1 content.
+Seed curated Địa lí 10 - Cánh Diều - Học kì 1 content.
 """
 from datetime import timedelta
 
@@ -16,7 +16,7 @@ from apps.users.models import User
 
 
 CURRICULUM = {
-    'subject': '??a l?',
+    'subject': 'Địa lí',
     'grade_level': '10',
     'semester': '1',
     'textbook_series': 'canh-dieu',
@@ -26,182 +26,181 @@ CURRICULUM = {
 MODULES = [
     {
         'code': 'module-01',
-        'title': 'B?n ??, GPS, b?n ?? s? v? ph??ng ph?p bi?u hi?n ??i t??ng ??a l?',
+        'title': 'Bản đồ, GPS, bản đồ số và phương pháp biểu hiện đối tượng địa lí',
         'center': [106.2, 16.2],
         'zoom': 4.6,
         'layers': [
-            ('Ranh gi?i t?nh, th?nh Vi?t Nam', 'vietnam_provinces', 'MULTIPOLYGON', None, None),
-            ('?i?m d?n c? v? ?? th? m?u', 'points_of_interest', 'POINT', 'category', 'module_01_city'),
-            ('Tuy?n giao th?ng minh h?a', 'line_features', 'LINESTRING', 'category', 'module_01_route'),
-            ('V?ng bi?u hi?n theo di?n t?ch', 'polygon_features', 'POLYGON', 'category', 'module_01_region'),
+            ('Ranh giới tỉnh, thành Việt Nam', 'vietnam_provinces', 'MULTIPOLYGON', None, None),
+            ('Điểm dân cư và đô thị mẫu', 'points_of_interest', 'POINT', 'category', 'module_01_city'),
+            ('Tuyến giao thông minh họa', 'line_features', 'LINESTRING', 'category', 'module_01_route'),
+            ('Vùng biểu hiện theo diện tích', 'polygon_features', 'POLYGON', 'category', 'module_01_region'),
         ],
-        'overview': 'Nh?n bi?t th?nh ph?n c? b?n c?a b?n ??, vai tr? c?a GPS v? b?n ?? s?, c?ng c?c c?ch bi?u hi?n ?i?m, ???ng, v?ng tr?n b?n ??.',
-        'practice': 'Quan s?t c?ng l?c l?p ?i?m, l?p tuy?n v? l?p v?ng ?? ph?n bi?t c?ch th? hi?n ??i t??ng ??a l? tr?n WebGIS.',
+        'overview': 'Nhận biết thành phần cơ bản của bản đồ, vai trò của GPS và bản đồ số, cùng các cách biểu hiện điểm, đường, vùng trên bản đồ.',
+        'practice': 'Quan sát cùng lúc lớp điểm, lớp tuyến và lớp vùng để phân biệt cách thể hiện đối tượng địa lí trên WebGIS.',
         'steps': [
-            'X?c ??nh t?n l?p, ch? gi?i v? ph?m vi quan s?t ch?nh c?a module 01.',
-            'So s?nh l?p ?i?m, l?p tuy?n v? l?p v?ng ?? nh?n ra m?i lo?i d? li?u ph? h?p v?i d?ng ??i t??ng n?o.',
-            'B?t to?n b? layer pack module 01 r?i ghi l?i v? d? v? ??i t??ng ?i?m, ???ng v? v?ng m? em quan s?t ???c.',
+            'Xác định tên lớp, chú giải và phạm vi quan sát chính của module 01.',
+            'So sánh lớp điểm, lớp tuyến và lớp vùng để nhận ra mỗi loại dữ liệu phù hợp với dạng đối tượng nào.',
+            'Bật toàn bộ layer pack module 01 rồi ghi lại ví dụ về đối tượng điểm, đường và vùng mà em quan sát được.',
         ],
         'questions': [
-            ('Ph??ng ph?p k? hi?u ph? h?p nh?t ?? th? hi?n c?ng bi?n l? g??', ['Ph??ng ph?p k? hi?u', 'Ph??ng ph?p ???ng chuy?n ??ng', 'Ph??ng ph?p ch?m ?i?m', 'Ph??ng ph?p b?n ?? - bi?u ??'], 0),
-            ('N?u mu?n th? hi?n m?ng l??i giao th?ng, l?p d? li?u n?o ph? h?p nh?t?', ['?i?m', '???ng', 'V?ng', 'B?ng s? li?u'], 1),
-            ('Ch? gi?i b?n ?? d?ng ?? l?m g??', ['Ch? h??ng B?c', 'Gi?i th?ch k? hi?u v? m?u s?c', '?o nhi?t ??', 'T?nh d?n s?'], 1),
-            ('T? l? b?n ?? cho bi?t ?i?u g??', ['Kho?ng c?ch th?t v? kho?ng c?ch tr?n b?n ??', 'L??ng m?a trung b?nh n?m', '?? d?c ??a h?nh', 'S? d?n ?? th?'], 0),
-            ('B?n ?? s? gi?p h?c sinh l?m g? thu?n ti?n h?n?', ['Quan s?t, b?t t?t l?p v? ph?ng to thu nh?', 'L?m th? nghi?m h?a h?c', '?o nh?p tim', 'Thay s?ch gi?o khoa'], 0),
-            ('GPS th??ng ???c d?ng ?? x?c ??nh ?i?u g??', ['V? tr?', '?? m?n', 'Lo?i ??t', 'D?n s?'], 0),
-            ('??i t??ng ph?n b? theo di?n r?ng th??ng h?p v?i c?ch bi?u hi?n n?o?', ['K? hi?u ?i?m', 'Khoanh v?ng', 'Bi?u ?? tr?n t?i ?i?m', '???ng chuy?n ??ng'], 1),
-            ('Khi nh?n l?p v?ng trong module 01, em ?ang luy?n k? n?ng n?o?', ['Ph?n bi?t ph?n b? theo di?n t?ch', 'T?nh t?c ?? gi?', '??c m?i gi?', 'X?c ??nh ?? cao tuy?t ??i'], 0),
+            ('Phương pháp kí hiệu phù hợp nhất để thể hiện cảng biển là gì?', ['Phương pháp kí hiệu', 'Phương pháp đường chuyển động', 'Phương pháp chấm điểm', 'Phương pháp bản đồ - biểu đồ'], 0),
+            ('Nếu muốn thể hiện mạng lưới giao thông, lớp dữ liệu nào phù hợp nhất?', ['Điểm', 'Đường', 'Vùng', 'Bảng số liệu'], 1),
+            ('Chú giải bản đồ dùng để làm gì?', ['Chỉ hướng Bắc', 'Giải thích kí hiệu và màu sắc', 'Đo nhiệt độ', 'Tính dân số'], 1),
+            ('Tỉ lệ bản đồ cho biết điều gì?', ['Khoảng cách thật và khoảng cách trên bản đồ', 'Lượng mưa trung bình năm', 'Độ dốc địa hình', 'Số dân đô thị'], 0),
+            ('Bản đồ số giúp học sinh làm gì thuận tiện hơn?', ['Quan sát, bật tắt lớp và phóng to thu nhỏ', 'Làm thí nghiệm hóa học', 'Đo nhịp tim', 'Thay sách giáo khoa'], 0),
+            ('GPS thường được dùng để xác định điều gì?', ['Vị trí', 'Độ mặn', 'Loại đất', 'Dân số'], 0),
+            ('Đối tượng phân bố theo diện rộng thường hợp với cách biểu hiện nào?', ['Kí hiệu điểm', 'Khoanh vùng', 'Biểu đồ tròn tại điểm', 'Đường chuyển động'], 1),
+            ('Khi nhìn lớp vùng trong module 01, em đang luyện kĩ năng nào?', ['Phân biệt phân bố theo diện tích', 'Tính tốc độ gió', 'Đọc múi giờ', 'Xác định độ cao tuyệt đối'], 0),
         ],
     },
     {
         'code': 'module-02',
-        'title': 'Tr?i ??t, kinh v? tuy?n, m?i gi? v? h? qu? chuy?n ??ng',
+        'title': 'Trái Đất, kinh vĩ tuyến, múi giờ và hệ quả chuyển động',
         'center': [30, 15],
         'zoom': 1.8,
         'layers': [
-            ('???ng kinh v? tuy?n ti?u bi?u', 'line_features', 'LINESTRING', 'category', 'module_02_reference_lines'),
-            ('M?i gi? minh h?a', 'polygon_features', 'POLYGON', 'category', 'module_02_timezone'),
-            ('?i?m b?i t?p t?a ??', 'points_of_interest', 'POINT', 'category', 'module_02_coordinate'),
+            ('Đường kinh vĩ tuyến tiêu biểu', 'line_features', 'LINESTRING', 'category', 'module_02_reference_lines'),
+            ('Múi giờ minh họa', 'polygon_features', 'POLYGON', 'category', 'module_02_timezone'),
+            ('Điểm bài tập tọa độ', 'points_of_interest', 'POINT', 'category', 'module_02_coordinate'),
         ],
-        'overview': '?n c?ch x?c ??nh kinh tuy?n, v? tuy?n, m?i gi? v? hi?u h? qu? ch?nh c?a chuy?n ??ng t? quay quanh tr?c v? chuy?n ??ng quanh M?t Tr?i.',
-        'practice': 'D?ng WebGIS ?? nh?n di?n x?ch ??o, ch? tuy?n, m?i gi? v? ??c nhanh t?a ?? c?a c?c ?i?m m?u.',
+        'overview': 'Ôn cách xác định kinh tuyến, vĩ tuyến, múi giờ và hiểu hệ quả chính của chuyển động tự quay quanh trục và chuyển động quanh Mặt Trời.',
+        'practice': 'Dùng WebGIS để nhận diện xích đạo, chí tuyến, múi giờ và đọc nhanh tọa độ của các điểm mẫu.',
         'steps': [
-            'X?c ??nh x?ch ??o, ch? tuy?n v? kinh tuy?n g?c tr?n b?n ?? th? gi?i.',
-            'B?t l?p m?i gi? ?? so s?nh v? tr? c?a Vi?t Nam v?i c?c khu v?c kh?c.',
-            'M? l?p ?i?m t?a ?? v? luy?n ??c kinh ??, v? ?? c?a t?ng ?i?m.',
+            'Xác định xích đạo, chí tuyến và kinh tuyến gốc trên bản đồ thế giới.',
+            'Bật lớp múi giờ để so sánh vị trí của Việt Nam với các khu vực khác.',
+            'Mở lớp điểm tọa độ và luyện đọc kinh độ, vĩ độ của từng điểm.',
         ],
         'questions': [
-            ('Kinh tuy?n g?c ?i qua ??a ?i?m n?o?', ['Greenwich', 'H? N?i', 'Tokyo', 'Paris'], 0),
-            ('X?ch ??o l? ???ng g??', ['Kinh tuy?n 0 ??', 'V? tuy?n 0 ??', 'Ch? tuy?n B?c', 'V?ng c?c B?c'], 1),
-            ('M?t m?i gi? chu?n r?ng kho?ng bao nhi?u kinh ???', ['10 ??', '12 ??', '15 ??', '24 ??'], 2),
-            ('Vi?t Nam thu?c m?i gi? n?o?', ['UTC+5', 'UTC+6', 'UTC+7', 'UTC+8'], 2),
-            ('H? qu? r? nh?t c?a Tr?i ??t t? quay quanh tr?c l? g??', ['Lu?n phi?n ng?y ??m', '??ng ??t', 'M?a ??', 'N?i l?a'], 0),
-            ('N?u ?i t? t?y sang ??ng, gi? ??a ph??ng th??ng thay ??i th? n?o?', ['S?m h?n', 'Mu?n h?n', 'Kh?ng ??i', '??o ng??c ng?u nhi?n'], 0),
-            ('Ch? tuy?n B?c n?m g?n v? ?? n?o?', ['0 ??', '23 ?? 27 ph?t B?c', '45 ?? B?c', '66 ?? 33 ph?t B?c'], 1),
-            ('L?p ?i?m t?a ?? trong module 02 gi?p r?n k? n?ng g??', ['??c v? x?c ??nh t?a ?? ??a l?', 'Ph?n lo?i ??t', 'Nh?n bi?t l?u v?c s?ng', 'T?nh ?? m?n bi?n'], 0),
+            ('Kinh tuyến gốc đi qua địa điểm nào?', ['Greenwich', 'Hà Nội', 'Tokyo', 'Paris'], 0),
+            ('Xích đạo là đường gì?', ['Kinh tuyến 0 độ', 'Vĩ tuyến 0 độ', 'Chí tuyến Bắc', 'Vòng cực Bắc'], 1),
+            ('Một múi giờ chuẩn rộng khoảng bao nhiêu kinh độ?', ['10 độ', '12 độ', '15 độ', '24 độ'], 2),
+            ('Việt Nam thuộc múi giờ nào?', ['UTC+5', 'UTC+6', 'UTC+7', 'UTC+8'], 2),
+            ('Hệ quả rõ nhất của Trái Đất tự quay quanh trục là gì?', ['Luân phiên ngày đêm', 'Động đất', 'Mưa đá', 'Núi lửa'], 0),
+            ('Nếu đi từ tây sang đông, giờ địa phương thường thay đổi thế nào?', ['Sớm hơn', 'Muộn hơn', 'Không đổi', 'Đảo ngược ngẫu nhiên'], 0),
+            ('Chí tuyến Bắc nằm gần vĩ độ nào?', ['0 độ', '23 độ 27 phút Bắc', '45 độ Bắc', '66 độ 33 phút Bắc'], 1),
+            ('Lớp điểm tọa độ trong module 02 giúp rèn kĩ năng gì?', ['Đọc và xác định tọa độ địa lí', 'Phân loại đất', 'Nhận biết lưu vực sông', 'Tính độ mặn biển'], 0),
         ],
     },
     {
         'code': 'module-03',
-        'title': 'Th?ch quy?n, ki?n t?o m?ng, n?i l?c v? ngo?i l?c',
+        'title': 'Thạch quyển, kiến tạo mảng, nội lực và ngoại lực',
         'center': [105, 12],
         'zoom': 2.3,
         'layers': [
-            ('Ranh gi?i m?ng ki?n t?o', 'line_features', 'LINESTRING', 'category', 'module_03_plate_boundary'),
-            ('?i?m n?i l?a v? ??ng ??t m?u', 'points_of_interest', 'POINT', 'category', 'module_03_hazard_point'),
-            ('D?ng ??a h?nh minh h?a', 'polygon_features', 'POLYGON', 'category', 'module_03_landform'),
+            ('Ranh giới mảng kiến tạo', 'line_features', 'LINESTRING', 'category', 'module_03_plate_boundary'),
+            ('Điểm núi lửa và động đất mẫu', 'points_of_interest', 'POINT', 'category', 'module_03_hazard_point'),
+            ('Dạng địa hình minh họa', 'polygon_features', 'POLYGON', 'category', 'module_03_landform'),
         ],
-        'overview': 'Nh?n bi?t vai tr? c?a th?ch quy?n, quy lu?t ph?n b? m?ng ki?n t?o v? t?c ??ng c?a n?i l?c, ngo?i l?c ??n b? m?t Tr?i ??t.',
-        'practice': 'Quan s?t ranh gi?i m?ng, ?i?m nguy c? v? d?ng ??a h?nh ?? li?n h? gi?a v?n ??ng ki?n t?o v? ??a h?nh b? m?t.',
+        'overview': 'Nhận biết vai trò của thạch quyển, quy luật phân bố mảng kiến tạo và tác động của nội lực, ngoại lực đến bề mặt Trái Đất.',
+        'practice': 'Quan sát ranh giới mảng, điểm nguy cơ và dạng địa hình để liên hệ giữa vận động kiến tạo và địa hình bề mặt.',
         'steps': [
-            'Quan s?t ???ng ranh gi?i m?ng ?? nh?n ra n?i th??ng t?p trung ho?t ??ng ki?n t?o m?nh.',
-            '??i chi?u c?c ?i?m n?i l?a, ??ng ??t v?i ranh gi?i m?ng tr?n b?n ??.',
-            'B?t l?p d?ng ??a h?nh v? n?u v? d? v? t?c ??ng c?a n?i l?c ho?c ngo?i l?c.',
+            'Quan sát đường ranh giới mảng để nhận ra nơi thường tập trung hoạt động kiến tạo mạnh.',
+            'Đối chiếu các điểm núi lửa, động đất với ranh giới mảng trên bản đồ.',
+            'Bật lớp dạng địa hình và nêu ví dụ về tác động của nội lực hoặc ngoại lực.',
         ],
         'questions': [
-            ('M?ng ki?n t?o l? g??', ['Kh?i l?n c?a th?ch quy?n ?ang d?ch chuy?n', 'M?t lo?i ??t', 'M?t ??i kh? h?u', 'M?t d?ng bi?n'], 0),
-            ('??ng ??t v? n?i l?a th??ng t?p trung nhi?u ? ??u?', ['Ven ranh gi?i m?ng', 'Gi?a sa m?c', 'Trung t?m ??ng b?ng l?n', 'Tr?n m?i n?i nh? nhau'], 0),
-            ('N?i l?c ch? y?u t?o ra t?c ??ng n?o?', ['N?ng l?n, u?n n?p, ??t g?y', 'L?m m?t kh? quy?n', 'T?ng ?? m?n bi?n', 'T?o m?a nh?n t?o'], 0),
-            ('Ngo?i l?c bao g?m qu? tr?nh n?o?', ['Phong h?a, x?m th?c, b?i t?', 'Ph?ng x? m?t tr?i', 'Sinh s?n c?a sinh v?t', 'Quang h?p'], 0),
-            ('??a h?nh n?i tr? th??ng li?n quan nhi?u ??n qu? tr?nh n?o?', ['V?n ??ng ki?n t?o m?nh', 'L?ng ??ng ph? sa y?n t?nh', 'B?c h?i n??c', 'Chuy?n ??ng bi?u ki?n c?a M?t Tr?i'], 0),
-            ('Khi quan s?t l?p ??a h?nh minh h?a, em ?ang luy?n k? n?ng g??', ['Li?n h? qu? tr?nh t?o h?nh v?i d?ng ??a h?nh', '??c m?i gi?', 'T?nh t? l? d?n s?', 'X?c ??nh lo?i gi? m?a'], 0),
-            ('N?i l?c v? ngo?i l?c c? quan h? th? n?o?', ['C?ng t?c ??ng l?m bi?n ??i b? m?t Tr?i ??t', 'Ho?n to?n kh?ng li?n quan', 'Ch? c? n?i l?c m?i quan tr?ng', 'Ch? c? ngo?i l?c m?i quan tr?ng'], 0),
-            ('V? d? n?o sau ??y g?n v?i ngo?i l?c?', ['B?i t? ? c?a s?ng', 'N?ng t?o n?i', 'Phun tr?o magma', '??t g?y ki?n t?o'], 0),
+            ('Mảng kiến tạo là gì?', ['Khối lớn của thạch quyển đang dịch chuyển', 'Một loại đất', 'Một đới khí hậu', 'Một dòng biển'], 0),
+            ('Động đất và núi lửa thường tập trung nhiều ở đâu?', ['Ven ranh giới mảng', 'Giữa sa mạc', 'Trung tâm đồng bằng lớn', 'Trên mọi nơi như nhau'], 0),
+            ('Nội lực chủ yếu tạo ra tác động nào?', ['Nâng lên, uốn nếp, đứt gãy', 'Làm mát khí quyển', 'Tăng độ mặn biển', 'Tạo mưa nhân tạo'], 0),
+            ('Ngoại lực bao gồm quá trình nào?', ['Phong hóa, xâm thực, bồi tụ', 'Phóng xạ mặt trời', 'Sinh sản của sinh vật', 'Quang hợp'], 0),
+            ('Địa hình núi trẻ thường liên quan nhiều đến quá trình nào?', ['Vận động kiến tạo mạnh', 'Lắng đọng phù sa yên tĩnh', 'Bốc hơi nước', 'Chuyển động biểu kiến của Mặt Trời'], 0),
+            ('Khi quan sát lớp địa hình minh họa, em đang luyện kĩ năng gì?', ['Liên hệ quá trình tạo hình với dạng địa hình', 'Đọc múi giờ', 'Tính tỉ lệ dân số', 'Xác định loại gió mùa'], 0),
+            ('Nội lực và ngoại lực có quan hệ thế nào?', ['Cùng tác động làm biến đổi bề mặt Trái Đất', 'Hoàn toàn không liên quan', 'Chỉ có nội lực mới quan trọng', 'Chỉ có ngoại lực mới quan trọng'], 0),
+            ('Ví dụ nào sau đây gần với ngoại lực?', ['Bồi tụ ở cửa sông', 'Nâng tạo núi', 'Phun trào magma', 'Đứt gãy kiến tạo'], 0),
         ],
     },
     {
         'code': 'module-04',
-        'title': 'Kh? quy?n, nhi?t ??, kh? ?p, gi? v? m?a',
+        'title': 'Khí quyển, nhiệt độ, khí áp, gió và mưa',
         'center': [95, 18],
         'zoom': 2.2,
         'layers': [
-            ('?ai kh? ?p v? gi? ch?nh', 'line_features', 'LINESTRING', 'category', 'module_04_wind_belt'),
-            ('Tr?m kh? t??ng m?u', 'points_of_interest', 'POINT', 'category', 'module_04_climate_station'),
-            ('Mi?n kh? h?u minh h?a', 'polygon_features', 'POLYGON', 'category', 'module_04_climate_zone'),
+            ('Đai khí áp và gió chính', 'line_features', 'LINESTRING', 'category', 'module_04_wind_belt'),
+            ('Trạm khí tượng mẫu', 'points_of_interest', 'POINT', 'category', 'module_04_climate_station'),
+            ('Miền khí hậu minh họa', 'polygon_features', 'POLYGON', 'category', 'module_04_climate_zone'),
         ],
-        'overview': 'C?ng c? ki?n th?c v? c?u tr?c kh? quy?n, s? ph?n b? nhi?t ??, kh? ?p, c?c ?ai gi? ch?nh v? nh?n t? t?o m?a.',
-        'practice': 'D?ng WebGIS ?? so s?nh tr?m kh? t??ng, ?ai gi? v? mi?n kh? h?u khi tr? l?i c?c c?u h?i cu?i b?i.',
+        'overview': 'Củng cố kiến thức về cấu trúc khí quyển, sự phân bố nhiệt độ, khí áp, các đai gió chính và nhân tố tạo mưa.',
+        'practice': 'Dùng WebGIS để so sánh trạm khí tượng, đai gió và miền khí hậu khi trả lời các câu hỏi cuối bài.',
         'steps': [
-            'Quan s?t c?c ?ai gi? ch?nh ?? ghi nh? h??ng chuy?n ??ng ph? bi?n c?a kh?ng kh?.',
-            'M? c?c tr?m kh? t??ng m?u v? so s?nh th?ng tin nhi?t ??, l??ng m?a gi?a c?c v? tr?.',
-            'B?t l?p mi?n kh? h?u ?? li?n h? gi?a gi?, m?a v? s? kh?c bi?t kh? h?u.',
+            'Quan sát các đai gió chính để ghi nhớ hướng chuyển động phổ biến của không khí.',
+            'Mở các trạm khí tượng mẫu và so sánh thông tin nhiệt độ, lượng mưa giữa các vị trí.',
+            'Bật lớp miền khí hậu để liên hệ giữa gió, mưa và sự khác biệt khí hậu.',
         ],
         'questions': [
-            ('Kh? ?p l? g??', ['S?c ?p c?a kh?ng kh? l?n b? m?t Tr?i ??t', '?? m?n c?a n??c bi?n', '?? d?y c?a ??t', 'L??ng ph? sa'], 0),
-            ('Gi? h?nh th?nh ch? y?u do s? ch?nh l?ch n?o?', ['Kh? ?p', 'D?n s?', '?? che ph? r?ng', 'S? gi? h?c'], 0),
-            ('M?a ??a h?nh th??ng xu?t hi?n khi n?o?', ['Kh?ng kh? ?m b? ??y l?n s??n n?i', 'Bi?n l?ng s?ng', '?p cao m?nh l?n', 'Tr?i quang ho?n to?n'], 0),
-            ('?ai ?p th?p x?ch ??o th??ng g?n v?i ??c ?i?m n?o?', ['Kh?ng kh? b?c l?n m?nh', 'Kh? h?n quanh n?m', 'B?ng tuy?t v?nh c?u', 'Gi? t?y ?n ??i suy y?u ho?n to?n'], 0),
-            ('Tr?m kh? t??ng gi?p h?c sinh quan s?t t?t nh?t d? li?u n?o?', ['Nhi?t ?? v? l??ng m?a', '??t g?y ??a ch?t', 'Lo?i ??t', '??ng ??t s?u'], 0),
-            ('Mi?n kh? h?u th??ng ???c bi?u hi?n thu?n ti?n b?ng l?p n?o?', ['L?p v?ng', 'L?p ?i?m ??n l?', 'L?p b?ng thu?n v?n b?n', 'L?p ?nh kh?ng ??nh v?'], 0),
-            ('Gi? th?i t? n?i n?o ??n n?i n?o?', ['T? n?i kh? ?p cao ??n n?i kh? ?p th?p', 'T? bi?n v?o r?ng m?i l?c', 'T? n?i n?ng h?n ??n n?i l?nh h?n b?t k? ?p su?t', 'Ng?u nhi?n'], 0),
-            ('Khi ??i chi?u tr?m kh? t??ng v? mi?n kh? h?u, em ?ang luy?n k? n?ng g??', ['Li?n h? s? li?u ?i?m v?i v?ng ph?n h?a kh? h?u', '??c m?i gi?', 'Nh?n d?ng m?ng ki?n t?o', 'T?nh chi?u d?i s?ng'], 0),
+            ('Khí áp là gì?', ['Sức ép của không khí lên bề mặt Trái Đất', 'Độ mặn của nước biển', 'Độ dày của đất', 'Lượng phù sa'], 0),
+            ('Gió hình thành chủ yếu do sự chênh lệch nào?', ['Khí áp', 'Dân số', 'Độ che phủ rừng', 'Số giờ học'], 0),
+            ('Mưa địa hình thường xuất hiện khi nào?', ['Không khí ẩm bị đẩy lên sườn núi', 'Biển lặng sóng', 'Áp cao mạnh lên', 'Trời quang hoàn toàn'], 0),
+            ('Đai áp thấp xích đạo thường gắn với đặc điểm nào?', ['Không khí bốc lên mạnh', 'Khô hạn quanh năm', 'Băng tuyết vĩnh cửu', 'Gió tây ôn đới suy yếu hoàn toàn'], 0),
+            ('Trạm khí tượng giúp học sinh quan sát tốt nhất dữ liệu nào?', ['Nhiệt độ và lượng mưa', 'Đứt gãy địa chất', 'Loại đất', 'Động đất sâu'], 0),
+            ('Miền khí hậu thường được biểu hiện thuận tiện bằng lớp nào?', ['Lớp vùng', 'Lớp điểm đơn lẻ', 'Lớp bảng thuần văn bản', 'Lớp ảnh không định vị'], 0),
+            ('Gió thổi từ nơi nào đến nơi nào?', ['Từ nơi khí áp cao đến nơi khí áp thấp', 'Từ biển vào rừng mọi lúc', 'Từ nơi nóng hơn đến nơi lạnh hơn bất kể áp suất', 'Ngẫu nhiên'], 0),
+            ('Khi đối chiếu trạm khí tượng và miền khí hậu, em đang luyện kĩ năng gì?', ['Liên hệ số liệu điểm với vùng phân hóa khí hậu', 'Đọc múi giờ', 'Nhận dạng mảng kiến tạo', 'Tính chiều dài sông'], 0),
         ],
     },
     {
         'code': 'module-05',
-        'title': 'Th?y quy?n, n??c tr?n l?c ??a, n??c bi?n v? ??i d??ng',
+        'title': 'Thủy quyển, nước trên lục địa, nước biển và đại dương',
         'center': [107.5, 15.5],
         'zoom': 4.0,
         'layers': [
-            ('S?ng ch?nh minh h?a', 'routes', 'LINESTRING', 'type', 'module_05_river'),
-            ('L?u v?c s?ng m?u', 'boundaries', 'MULTIPOLYGON', 'type', 'module_05_basin'),
-            ('Tr?m th?y v?n m?u', 'points_of_interest', 'POINT', 'category', 'module_05_hydro_station'),
-            ('V?ng bi?n v? ??i d??ng minh h?a', 'polygon_features', 'POLYGON', 'category', 'module_05_sea_region'),
+            ('Sông chính minh họa', 'routes', 'LINESTRING', 'type', 'module_05_river'),
+            ('Lưu vực sông mẫu', 'boundaries', 'MULTIPOLYGON', 'type', 'module_05_basin'),
+            ('Trạm thủy văn mẫu', 'points_of_interest', 'POINT', 'category', 'module_05_hydro_station'),
+            ('Vùng biển và đại dương minh họa', 'polygon_features', 'POLYGON', 'category', 'module_05_sea_region'),
         ],
-        'overview': 'N?m ???c c?c th?nh ph?n ch?nh c?a th?y quy?n, ??c ?i?m n??c tr?n l?c ??a v? m?t s? bi?u hi?n c? b?n c?a m?i tr??ng bi?n - ??i d??ng.',
-        'practice': 'T? l?u v?c, tuy?n s?ng v? tr?m th?y v?n, h?c sinh luy?n quan s?t ch? ?? n??c s?ng v? m?i li?n h? v?i kh?ng gian l?u v?c.',
+        'overview': 'Nắm được các thành phần chính của thủy quyển, đặc điểm nước trên lục địa và một số biểu hiện cơ bản của môi trường biển - đại dương.',
+        'practice': 'Từ lưu vực, tuyến sông và trạm thủy văn, học sinh luyện quan sát chế độ nước sông và mối liên hệ với không gian lưu vực.',
         'steps': [
-            'B?t l?p s?ng ch?nh ?? nh?n ra h??ng ch?y v? m?ng l??i s?ng ti?u bi?u.',
-            'M? l?p l?u v?c s?ng v? x?c ??nh ph?m vi thu n??c c?a t?ng h? th?ng.',
-            'Quan s?t tr?m th?y v?n, sau ?? li?n h? v?i l?p v?ng bi?n ?? tr? l?i c?u h?i ng?n cu?i b?i.',
+            'Bật lớp sông chính để nhận ra hướng chảy và mạng lưới sông tiêu biểu.',
+            'Mở lớp lưu vực sông và xác định phạm vi thu nước của từng hệ thống.',
+            'Quan sát trạm thủy văn, sau đó liên hệ với lớp vùng biển để trả lời câu hỏi ngắn cuối bài.',
         ],
         'questions': [
-            ('L?u v?c s?ng l? g??', ['Ph?n di?n t?ch cung c?p n??c cho m?t con s?ng', 'M?t ?o?n s?ng c? nhi?u th?c', 'N?i t?u thuy?n neo ??u', 'V?ng c? nhi?u ao h?'], 0),
-            ('Ch? ?? n??c s?ng ch?u ?nh h??ng m?nh c?a y?u t? n?o?', ['M?a theo m?a v? ngu?n c?p n??c', 'M?u ??t', 'T?n ??a ph??ng', 'M?i gi?'], 0),
-            ('Tr?m th?y v?n gi?p theo d?i n?i dung n?o?', ['M?c n??c v? l?u l??ng', 'S? l??ng ??ng ??t', '?? nghi?ng tr?c Tr?i ??t', 'H??ng gi? t?ng cao'], 0),
-            ('N??c bi?n v? ??i d??ng kh?c n??c tr?n l?c ??a r? nh?t ? ??c ?i?m n?o?', ['?? m?n', 'Nhi?t ?? lu?n th?p', 'Kh?ng c? sinh v?t', 'Kh?ng ch?u t?c ??ng c?a gi?'], 0),
-            ('N?u quan s?t l?p tuy?n s?ng v? l?p l?u v?c c?ng l?c, em d? nh?n ra ?i?u g??', ['Quan h? gi?a d?ng ch?y v? ph?m vi thu n??c', 'M?i gi? ??a ph??ng', 'S? ph?n b? ??t feralit', 'V? tr? ch? tuy?n'], 0),
-            ('V? d? n?o thu?c n??c tr?n l?c ??a?', ['S?ng, h?, b?ng h?, n??c ng?m', 'Bi?n ??ng', 'Th?i B?nh D??ng', 'V?nh B?c B?'], 0),
-            ('N??c bi?n tham gia m?nh v?o v?ng tu?n ho?n n??c qua qu? tr?nh n?o?', ['B?c h?i', 'U?n n?p ??a h?nh', '??t g?y', 'Phong h?a c? h?c'], 0),
-            ('L?p v?ng bi?n trong module 05 gi?p h?c sinh l?m g??', ['Li?n h? gi?a kh?ng gian bi?n v? th?y quy?n', '??c t?a ?? n?i l?a', 'T?nh d?n s?', 'Quan s?t ?ai ?p cao'], 0),
+            ('Lưu vực sông là gì?', ['Phần diện tích cung cấp nước cho một con sông', 'Một đoạn sông có nhiều thác', 'Nơi tàu thuyền neo đậu', 'Vùng có nhiều ao hồ'], 0),
+            ('Chế độ nước sông chịu ảnh hưởng mạnh của yếu tố nào?', ['Mưa theo mùa và nguồn cấp nước', 'Màu đất', 'Tên địa phương', 'Múi giờ'], 0),
+            ('Trạm thủy văn giúp theo dõi nội dung nào?', ['Mực nước và lưu lượng', 'Số lượng động đất', 'Độ nghiêng trục Trái Đất', 'Hướng gió tầng cao'], 0),
+            ('Nước biển và đại dương khác nước trên lục địa rõ nhất ở đặc điểm nào?', ['Độ mặn', 'Nhiệt độ luôn thấp', 'Không có sinh vật', 'Không chịu tác động của gió'], 0),
+            ('Nếu quan sát lớp tuyến sông và lớp lưu vực cùng lúc, em dễ nhận ra điều gì?', ['Quan hệ giữa dòng chảy và phạm vi thu nước', 'Múi giờ địa phương', 'Sự phân bố đất feralit', 'Vị trí chí tuyến'], 0),
+            ('Ví dụ nào thuộc nước trên lục địa?', ['Sông, hồ, băng hà, nước ngầm', 'Biển Đông', 'Thái Bình Dương', 'Vịnh Bắc Bộ'], 0),
+            ('Nước biển tham gia mạnh vào vòng tuần hoàn nước qua quá trình nào?', ['Bốc hơi', 'Uốn nếp địa hình', 'Đứt gãy', 'Phong hóa cơ học'], 0),
+            ('Lớp vùng biển trong module 05 giúp học sinh làm gì?', ['Liên hệ giữa không gian biển và thủy quyển', 'Đọc tọa độ núi lửa', 'Tính dân số', 'Quan sát đai áp cao'], 0),
         ],
     },
     {
         'code': 'module-06',
-        'title': 'Th? nh??ng, sinh quy?n, v? ??a l?, quy lu?t ??a ??i v? phi ??a ??i',
+        'title': 'Thổ nhưỡng, sinh quyển, vỏ địa lí, quy luật địa đới và phi địa đới',
         'center': [106.5, 16.0],
         'zoom': 3.8,
         'layers': [
-            ('??i ??t minh h?a', 'polygon_features', 'POLYGON', 'category', 'module_06_soil_zone'),
-            ('??i sinh v?t minh h?a', 'polygon_features', 'POLYGON', 'category', 'module_06_biome_zone'),
-            ('?i?m h? sinh th?i m?u', 'points_of_interest', 'POINT', 'category', 'module_06_ecosystem_point'),
+            ('Đới đất minh họa', 'polygon_features', 'POLYGON', 'category', 'module_06_soil_zone'),
+            ('Đới sinh vật minh họa', 'polygon_features', 'POLYGON', 'category', 'module_06_biome_zone'),
+            ('Điểm hệ sinh thái mẫu', 'points_of_interest', 'POINT', 'category', 'module_06_ecosystem_point'),
         ],
-        'overview': 'Kh?i qu?t m?i quan h? gi?a ??t, sinh v?t v? c?c th?nh ph?n t? nhi?n trong v? ??a l?; b??c ??u nh?n bi?t quy lu?t ??a ??i v? phi ??a ??i.',
-        'practice': 'So s?nh l?p ??t, l?p sinh v?t v? ?i?m h? sinh th?i ?? th?y s? ph?n h?a theo ??i v? theo ?i?u ki?n ??a ph??ng.',
+        'overview': 'Khái quát mối quan hệ giữa đất, sinh vật và các thành phần tự nhiên trong vỏ địa lí; bước đầu nhận biết quy luật địa đới và phi địa đới.',
+        'practice': 'So sánh lớp đất, lớp sinh vật và điểm hệ sinh thái để thấy sự phân hóa theo đới và theo điều kiện địa phương.',
         'steps': [
-            'M? l?p ??i ??t v? nh?n ra s? kh?c nhau gi?a c?c v?ng ??t minh h?a.',
-            'B?t l?p ??i sinh v?t ?? ??i chi?u v?i l?p ??t v? ?i?u ki?n m?i tr??ng.',
-            'Quan s?t c?c ?i?m h? sinh th?i r?i n?u v? d? v? bi?u hi?n ??a ??i ho?c phi ??a ??i.',
+            'Mở lớp đới đất và nhận ra sự khác nhau giữa các vùng đất minh họa.',
+            'Bật lớp đới sinh vật để đối chiếu với lớp đất và điều kiện môi trường.',
+            'Quan sát các điểm hệ sinh thái rồi nêu ví dụ về biểu hiện địa đới hoặc phi địa đới.',
         ],
         'questions': [
-            ('Th? nh??ng l? g??', ['L?p ??t tr?n b? m?t l?c ??a', 'M?t d?ng m?a', 'M?t lo?i ?? magma', 'M?t d?ng bi?n'], 0),
-            ('Sinh quy?n bao g?m g??', ['To?n b? sinh v?t v? m?i tr??ng s?ng c?a ch?ng', 'Ch? ??ng v?t tr?n c?n', 'Ch? th?c v?t r?ng', 'Ch? vi khu?n trong ??t'], 0),
-            ('Quy lu?t ??a ??i g?n ch? y?u v?i s? thay ??i theo y?u t? n?o?', ['V? ??', 'Kinh ??', 'T?n ??a ph??ng', 'M?i gi?'], 0),
-            ('Quy lu?t phi ??a ??i th??ng g?n v?i y?u t? n?o?', ['?? cao v? ??a h?nh', 'V? ?? l? y?u t? duy nh?t', 'Chu k? ng?y ??m', 'D?ng ch?y s?ng'], 0),
-            ('Khi so s?nh l?p ??t v? l?p sinh v?t, h?c sinh ?ang luy?n k? n?ng g??', ['Nh?n ra m?i li?n h? gi?a c?c th?nh ph?n t? nhi?n', '??c t?a ?? ??a l?', 'X?c ??nh h??ng gi? m?a', 'T?nh kho?ng c?ch b?n ??'], 0),
-            ('V? d? n?o g?n v?i bi?u hi?n phi ??a ??i?', ['Kh?c bi?t sinh v?t theo ?ai cao tr?n n?i', 'Ph?n h?a t? x?ch ??o v? c?c', 'S? thay ??i th?i gian theo m?i gi?', 'S? lu?n phi?n ng?y ??m'], 0),
-            ('V? ??a l? ???c hi?u kh?i qu?t l? g??', ['L?p v? n?i c?c th?nh ph?n t? nhi?n t?c ??ng qua l?i ch?t ch?', 'L?i Tr?i ??t', 'M?t m?ng ki?n t?o ??n l?', 'Kh? quy?n t?ng cao'], 0),
-            ('?i?m h? sinh th?i m?u trong module 06 c? ?ch nh?t cho ho?t ??ng n?o?', ['Li?n h? ki?n th?c t? nhi?n v?i v? d? c? th? tr?n b?n ??', 'X?c ??nh ???ng ??t g?y', '??c m?i gi? chu?n', 'Theo d?i m?c n??c s?ng'], 0),
+            ('Thổ nhưỡng là gì?', ['Lớp đất trên bề mặt lục địa', 'Một dạng mưa', 'Một loại đá magma', 'Một dòng biển'], 0),
+            ('Sinh quyển bao gồm gì?', ['Toàn bộ sinh vật và môi trường sống của chúng', 'Chỉ động vật trên cạn', 'Chỉ thực vật rừng', 'Chỉ vi khuẩn trong đất'], 0),
+            ('Quy luật địa đới gắn chủ yếu với sự thay đổi theo yếu tố nào?', ['Vĩ độ', 'Kinh độ', 'Tên địa phương', 'Múi giờ'], 0),
+            ('Quy luật phi địa đới thường gắn với yếu tố nào?', ['Độ cao và địa hình', 'Vĩ độ là yếu tố duy nhất', 'Chu kì ngày đêm', 'Dòng chảy sông'], 0),
+            ('Khi so sánh lớp đất và lớp sinh vật, học sinh đang luyện kĩ năng gì?', ['Nhận ra mối liên hệ giữa các thành phần tự nhiên', 'Đọc tọa độ địa lí', 'Xác định hướng gió mùa', 'Tính khoảng cách bản đồ'], 0),
+            ('Ví dụ nào gần với biểu hiện phi địa đới?', ['Khác biệt sinh vật theo đai cao trên núi', 'Phân hóa từ xích đạo về cực', 'Sự thay đổi thời gian theo múi giờ', 'Sự luân phiên ngày đêm'], 0),
+            ('Vỏ địa lí được hiểu khái quát là gì?', ['Lớp vỏ nơi các thành phần tự nhiên tác động qua lại chặt chẽ', 'Lõi Trái Đất', 'Một mảng kiến tạo đơn lẻ', 'Khí quyển tầng cao'], 0),
+            ('Điểm hệ sinh thái mẫu trong module 06 có ích nhất cho hoạt động nào?', ['Liên hệ kiến thức tự nhiên với ví dụ cụ thể trên bản đồ', 'Xác định đường đứt gãy', 'Đọc múi giờ chuẩn', 'Theo dõi mực nước sông'], 0),
         ],
     },
 ]
 
-CURATED_MODULE_CODES = [module['code'] for module in MODULES]
-CURATED_CLASSROOM_NAME = '??a l? 10 - C?nh Di?u - HK1'
+CURATED_CLASSROOM_NAME = 'Địa lí 10 - Cánh Diều - HK1'
 
 
 class Command(BaseCommand):
-    help = 'Seed curated ??a l? 10 - C?nh Di?u - H?c k? 1 content for WebGIS.'
+    help = 'Seed curated Địa lí 10 - Cánh Diều - Học kì 1 content for WebGIS.'
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -236,11 +235,7 @@ class Command(BaseCommand):
         classroom, _ = Classroom.objects.update_or_create(
             teacher=teacher,
             name=CURATED_CLASSROOM_NAME,
-            defaults={
-                **CURRICULUM,
-                'module_code': '',
-                'is_published': True,
-            },
+            defaults={**CURRICULUM, 'module_code': '', 'is_published': True},
         )
         return classroom
 
@@ -256,87 +251,66 @@ class Command(BaseCommand):
 
     def ensure_points(self):
         points = [
-            ('H? N?i', 'module_01_city', '?? th? trung t?m', Point(105.8342, 21.0278, srid=4326)),
-            ('?? N?ng', 'module_01_city', '?? th? ven bi?n', Point(108.2022, 16.0544, srid=4326)),
-            ('TP. H? Ch? Minh', 'module_01_city', '?? th? l?n ph?a Nam', Point(106.6297, 10.8231, srid=4326)),
-            ('?i?m A', 'module_02_coordinate', 'M?u ??c t?a ?? g?n x?ch ??o', Point(30, 2, srid=4326)),
-            ('?i?m B', 'module_02_coordinate', 'M?u ??c t?a ?? ? B?c b?n c?u', Point(105, 21, srid=4326)),
-            ('?i?m C', 'module_02_coordinate', 'M?u ??c t?a ?? ? Nam b?n c?u', Point(-60, -15, srid=4326)),
-            ('V?nh ?ai l?a m?u', 'module_03_hazard_point', '?i?m n?i l?a minh h?a', Point(138, 36, srid=4326)),
-            ('??ng ??t m?u', 'module_03_hazard_point', '?i?m ??ng ??t minh h?a', Point(142, 38, srid=4326)),
-            ('H? N?i kh? t??ng', 'module_04_climate_station', 'Tr?m kh? t??ng mi?n B?c', Point(105.84, 21.03, srid=4326)),
-            ('Hu? kh? t??ng', 'module_04_climate_station', 'Tr?m kh? t??ng mi?n Trung', Point(107.58, 16.46, srid=4326)),
-            ('C?n Th? kh? t??ng', 'module_04_climate_station', 'Tr?m kh? t??ng mi?n Nam', Point(105.78, 10.03, srid=4326)),
-            ('Tr?m S?n T?y', 'module_05_hydro_station', 'Tr?m th?y v?n minh h?a', Point(105.51, 21.14, srid=4326)),
-            ('Tr?m Vi?t Tr?', 'module_05_hydro_station', 'Theo d?i m?c n??c s?ng', Point(105.41, 21.32, srid=4326)),
-            ('R?ng ng?p m?n C? Mau', 'module_06_ecosystem_point', 'H? sinh th?i ven bi?n', Point(105.15, 8.75, srid=4326)),
-            ('V??n qu?c gia C?c Ph??ng', 'module_06_ecosystem_point', 'H? sinh th?i r?ng nhi?t ??i', Point(105.61, 20.35, srid=4326)),
+            ('Hà Nội', 'module_01_city', 'Đô thị trung tâm', Point(105.8342, 21.0278, srid=4326)),
+            ('Đà Nẵng', 'module_01_city', 'Đô thị ven biển', Point(108.2022, 16.0544, srid=4326)),
+            ('TP. Hồ Chí Minh', 'module_01_city', 'Đô thị lớn phía Nam', Point(106.6297, 10.8231, srid=4326)),
+            ('Điểm A', 'module_02_coordinate', 'Mẫu đọc tọa độ gần xích đạo', Point(30, 2, srid=4326)),
+            ('Điểm B', 'module_02_coordinate', 'Mẫu đọc tọa độ ở Bắc bán cầu', Point(105, 21, srid=4326)),
+            ('Điểm C', 'module_02_coordinate', 'Mẫu đọc tọa độ ở Nam bán cầu', Point(-60, -15, srid=4326)),
+            ('Vành đai lửa mẫu', 'module_03_hazard_point', 'Điểm núi lửa minh họa', Point(138, 36, srid=4326)),
+            ('Động đất mẫu', 'module_03_hazard_point', 'Điểm động đất minh họa', Point(142, 38, srid=4326)),
+            ('Hà Nội khí tượng', 'module_04_climate_station', 'Trạm khí tượng miền Bắc', Point(105.84, 21.03, srid=4326)),
+            ('Huế khí tượng', 'module_04_climate_station', 'Trạm khí tượng miền Trung', Point(107.58, 16.46, srid=4326)),
+            ('Cần Thơ khí tượng', 'module_04_climate_station', 'Trạm khí tượng miền Nam', Point(105.78, 10.03, srid=4326)),
+            ('Trạm Sơn Tây', 'module_05_hydro_station', 'Trạm thủy văn minh họa', Point(105.51, 21.14, srid=4326)),
+            ('Trạm Việt Trì', 'module_05_hydro_station', 'Theo dõi mực nước sông', Point(105.41, 21.32, srid=4326)),
+            ('Rừng ngập mặn Cà Mau', 'module_06_ecosystem_point', 'Hệ sinh thái ven biển', Point(105.15, 8.75, srid=4326)),
+            ('Vườn quốc gia Cúc Phương', 'module_06_ecosystem_point', 'Hệ sinh thái rừng nhiệt đới', Point(105.61, 20.35, srid=4326)),
         ]
         for name, category, description, geometry in points:
-            PointOfInterest.objects.update_or_create(
-                name=name,
-                category=category,
-                defaults={'description': description, 'geometry': geometry},
-            )
+            PointOfInterest.objects.update_or_create(name=name, category=category, defaults={'description': description, 'geometry': geometry})
 
     def ensure_lines(self):
         lines = [
-            ('Tr?c giao th?ng B?c - Nam', 'module_01_route', 'Tuy?n giao th?ng minh h?a', [(105.84, 21.02), (108.2, 16.05), (106.63, 10.82)]),
-            ('X?ch ??o', 'module_02_reference_lines', 'V? tuy?n 0 ??', [(-180, 0), (180, 0)]),
-            ('Kinh tuy?n g?c', 'module_02_reference_lines', 'Kinh tuy?n 0 ??', [(0, -80), (0, 80)]),
-            ('Ch? tuy?n B?c', 'module_02_reference_lines', 'V? tuy?n 23 ?? 27 ph?t B?c', [(-180, 23.5), (180, 23.5)]),
-            ('Ranh gi?i m?ng Th?i B?nh D??ng', 'module_03_plate_boundary', 'Ranh gi?i m?ng ki?n t?o minh h?a', [(130, 35), (140, 30), (150, 20)]),
-            ('Ranh gi?i m?ng ? - ?u', 'module_03_plate_boundary', 'Ranh gi?i m?ng ki?n t?o minh h?a', [(80, 35), (95, 30), (105, 27)]),
-            ('T?n phong B?c b?n c?u', 'module_04_wind_belt', '?ai gi? ch?nh', [(-60, 30), (-20, 20), (20, 10)]),
-            ('T?n phong Nam b?n c?u', 'module_04_wind_belt', '?ai gi? ch?nh', [(-50, -25), (-10, -15), (30, -5)]),
-            ('Gi? t?y ?n ??i', 'module_04_wind_belt', '?ai gi? ch?nh', [(-80, 45), (-20, 50), (40, 55)]),
+            ('Trục giao thông Bắc - Nam', 'module_01_route', 'Tuyến giao thông minh họa', [(105.84, 21.02), (108.2, 16.05), (106.63, 10.82)]),
+            ('Xích đạo', 'module_02_reference_lines', 'Vĩ tuyến 0 độ', [(-180, 0), (180, 0)]),
+            ('Kinh tuyến gốc', 'module_02_reference_lines', 'Kinh tuyến 0 độ', [(0, -80), (0, 80)]),
+            ('Chí tuyến Bắc', 'module_02_reference_lines', 'Vĩ tuyến 23 độ 27 phút Bắc', [(-180, 23.5), (180, 23.5)]),
+            ('Ranh giới mảng Thái Bình Dương', 'module_03_plate_boundary', 'Ranh giới mảng kiến tạo minh họa', [(130, 35), (140, 30), (150, 20)]),
+            ('Ranh giới mảng Á - Âu', 'module_03_plate_boundary', 'Ranh giới mảng kiến tạo minh họa', [(80, 35), (95, 30), (105, 27)]),
+            ('Tín phong Bắc bán cầu', 'module_04_wind_belt', 'Đai gió chính', [(-60, 30), (-20, 20), (20, 10)]),
+            ('Tín phong Nam bán cầu', 'module_04_wind_belt', 'Đai gió chính', [(-50, -25), (-10, -15), (30, -5)]),
+            ('Gió tây ôn đới', 'module_04_wind_belt', 'Đai gió chính', [(-80, 45), (-20, 50), (40, 55)]),
         ]
         for name, category, description, coords in lines:
-            LineFeature.objects.update_or_create(
-                name=name,
-                category=category,
-                defaults={'description': description, 'geometry': LineString(coords, srid=4326)},
-            )
+            LineFeature.objects.update_or_create(name=name, category=category, defaults={'description': description, 'geometry': LineString(coords, srid=4326)})
 
     def ensure_polygons(self):
         polygons = [
-            ('V?ng bi?u hi?n n?ng nghi?p', 'module_01_region', 'V? d? v?ng tr?n b?n ??', [(104, 21), (107, 21), (107, 18), (104, 18), (104, 21)]),
-            ('UTC+7 minh h?a', 'module_02_timezone', 'V?ng m?i gi? minh h?a', [(97.5, -10), (112.5, -10), (112.5, 35), (97.5, 35), (97.5, -10)]),
-            ('Mi?n n?i tr?', 'module_03_landform', 'D?ng ??a h?nh ch?u t?c ??ng ki?n t?o', [(99, 29), (106, 29), (106, 23), (99, 23), (99, 29)]),
-            ('??ng b?ng b?i t?', 'module_03_landform', 'D?ng ??a h?nh do ngo?i l?c', [(105, 11.5), (108, 11.5), (108, 9.5), (105, 9.5), (105, 11.5)]),
-            ('Mi?n kh? h?u nhi?t ??i ?m', 'module_04_climate_zone', 'Mi?n kh? h?u minh h?a', [(101, 22), (110, 22), (110, 8), (101, 8), (101, 22)]),
-            ('Bi?n ??ng minh h?a', 'module_05_sea_region', 'Kh?ng gian bi?n minh h?a', [(106, 21), (120, 21), (120, 7), (106, 7), (106, 21)]),
-            ('??t feralit', 'module_06_soil_zone', '??i ??t minh h?a', [(103.5, 21), (110.5, 21), (110.5, 11), (103.5, 11), (103.5, 21)]),
-            ('??t ph? sa', 'module_06_soil_zone', '??i ??t minh h?a', [(105, 11), (107.2, 11), (107.2, 9), (105, 9), (105, 11)]),
-            ('R?ng nhi?t ??i ?m', 'module_06_biome_zone', '??i sinh v?t minh h?a', [(103.5, 19), (111, 19), (111, 10), (103.5, 10), (103.5, 19)]),
-            ('Sinh v?t n?i cao', 'module_06_biome_zone', 'Bi?u hi?n phi ??a ??i theo ?? cao', [(103.8, 23.5), (105.5, 23.5), (105.5, 21.8), (103.8, 21.8), (103.8, 23.5)]),
+            ('Vùng biểu hiện nông nghiệp', 'module_01_region', 'Ví dụ vùng trên bản đồ', [(104, 21), (107, 21), (107, 18), (104, 18), (104, 21)]),
+            ('UTC+7 minh họa', 'module_02_timezone', 'Vùng múi giờ minh họa', [(97.5, -10), (112.5, -10), (112.5, 35), (97.5, 35), (97.5, -10)]),
+            ('Miền núi trẻ', 'module_03_landform', 'Dạng địa hình chịu tác động kiến tạo', [(99, 29), (106, 29), (106, 23), (99, 23), (99, 29)]),
+            ('Đồng bằng bồi tụ', 'module_03_landform', 'Dạng địa hình do ngoại lực', [(105, 11.5), (108, 11.5), (108, 9.5), (105, 9.5), (105, 11.5)]),
+            ('Miền khí hậu nhiệt đới ẩm', 'module_04_climate_zone', 'Miền khí hậu minh họa', [(101, 22), (110, 22), (110, 8), (101, 8), (101, 22)]),
+            ('Biển Đông minh họa', 'module_05_sea_region', 'Không gian biển minh họa', [(106, 21), (120, 21), (120, 7), (106, 7), (106, 21)]),
+            ('Đất feralit', 'module_06_soil_zone', 'Đới đất minh họa', [(103.5, 21), (110.5, 21), (110.5, 11), (103.5, 11), (103.5, 21)]),
+            ('Đất phù sa', 'module_06_soil_zone', 'Đới đất minh họa', [(105, 11), (107.2, 11), (107.2, 9), (105, 9), (105, 11)]),
+            ('Rừng nhiệt đới ẩm', 'module_06_biome_zone', 'Đới sinh vật minh họa', [(103.5, 19), (111, 19), (111, 10), (103.5, 10), (103.5, 19)]),
+            ('Sinh vật núi cao', 'module_06_biome_zone', 'Biểu hiện phi địa đới theo độ cao', [(103.8, 23.5), (105.5, 23.5), (105.5, 21.8), (103.8, 21.8), (103.8, 23.5)]),
         ]
         for name, category, description, coords in polygons:
-            PolygonFeature.objects.update_or_create(
-                name=name,
-                category=category,
-                defaults={'description': description, 'geometry': Polygon(coords, srid=4326)},
-            )
+            PolygonFeature.objects.update_or_create(name=name, category=category, defaults={'description': description, 'geometry': Polygon(coords, srid=4326)})
 
     def ensure_boundaries_and_routes(self):
         basin = Polygon([(103.5, 23.3), (106.7, 23.3), (106.7, 20.1), (103.5, 20.1), (103.5, 23.3)], srid=4326)
-        Boundary.objects.update_or_create(
-            name='L?u v?c s?ng H?ng',
-            type='module_05_basin',
-            defaults={'code': 'LVSH', 'geometry': MultiPolygon(basin, srid=4326)},
-        )
-
+        Boundary.objects.update_or_create(name='Lưu vực sông Hồng', type='module_05_basin', defaults={'code': 'LVSH', 'geometry': MultiPolygon(basin, srid=4326)})
         routes = [
-            ('S?ng H?ng', 'module_05_river', [(103.9, 22.5), (104.8, 21.8), (105.6, 21.1), (106.2, 20.8)]),
-            ('S?ng ??', 'module_05_river', [(103.3, 22.0), (104.5, 21.4), (105.4, 21.0)]),
-            ('S?ng Ti?n', 'module_05_river', [(105.0, 10.7), (106.2, 10.4), (106.8, 10.2)]),
+            ('Sông Hồng', 'module_05_river', [(103.9, 22.5), (104.8, 21.8), (105.6, 21.1), (106.2, 20.8)]),
+            ('Sông Đà', 'module_05_river', [(103.3, 22.0), (104.5, 21.4), (105.4, 21.0)]),
+            ('Sông Tiền', 'module_05_river', [(105.0, 10.7), (106.2, 10.4), (106.8, 10.2)]),
         ]
         for name, route_type, coords in routes:
-            Route.objects.update_or_create(
-                name=name,
-                type=route_type,
-                defaults={'length_km': len(coords) * 120, 'geometry': LineString(coords, srid=4326)},
-            )
+            Route.objects.update_or_create(name=name, type=route_type, defaults={'length_km': len(coords) * 120, 'geometry': LineString(coords, srid=4326)})
 
     def upsert_layers(self, module):
         layers = []
@@ -346,7 +320,7 @@ class Command(BaseCommand):
                 data_source_table=table_name,
                 defaults={
                     'geom_type': geom_type,
-                    'description': f'Layer h?c t?p cho {module["title"]}',
+                    'description': f'Layer học tập cho {module["title"]}',
                     'filter_column': filter_column,
                     'filter_value': filter_value,
                     'school': CURRICULUM['school'],
@@ -358,7 +332,7 @@ class Command(BaseCommand):
         return layers
 
     def upsert_lesson(self, module, lesson_type, layers):
-        suffix = 'T?ng quan' if lesson_type == 'overview' else 'Th?c h?nh WebGIS'
+        suffix = 'Tổng quan' if lesson_type == 'overview' else 'Thực hành WebGIS'
         lesson, _ = Lesson.objects.update_or_create(
             title=f'{module["title"]} - {suffix}',
             module_code=module['code'],
@@ -380,7 +354,6 @@ class Command(BaseCommand):
         action_ids = list(lesson.steps.exclude(map_action=None).values_list('map_action_id', flat=True))
         lesson.steps.all().delete()
         MapAction.objects.filter(id__in=action_ids).delete()
-
         zoom_boost = 0.8 if lesson_type == 'practice' else 0
         actions = [
             MapAction.objects.create(action_type='flyTo', payload={'center': module['center'], 'zoom': module['zoom'], 'layers_off': 'all'}),
@@ -389,7 +362,7 @@ class Command(BaseCommand):
         ]
         texts = module['steps'].copy()
         if lesson_type == 'practice':
-            texts[0] = f'Kh?i ??ng b?i th?c h?nh WebGIS cho {module["title"].lower()}.'
+            texts[0] = f'Khởi động bài thực hành WebGIS cho {module["title"].lower()}.'
         for order, (text, action) in enumerate(zip(texts, actions), start=1):
             LessonStep.objects.create(lesson=lesson, order=order, popup_text=text, map_action=action)
 
@@ -400,7 +373,7 @@ class Command(BaseCommand):
             defaults={
                 'lesson': lesson,
                 'classroom': classroom,
-                'description': f'B?i quiz c?ng c? ki?n th?c cho {module["title"].lower()}.',
+                'description': f'Bài quiz củng cố kiến thức cho {module["title"].lower()}.',
                 'subject': CURRICULUM['subject'],
                 'grade_level': CURRICULUM['grade_level'],
                 'semester': CURRICULUM['semester'],
@@ -420,9 +393,9 @@ class Command(BaseCommand):
         created_ids = []
         lesson_assignment, _ = Assignment.objects.update_or_create(
             classroom=classroom,
-            title=f'[HK1] {module["title"]} - b?i th?c h?nh',
+            title=f'[HK1] {module["title"]} - bài thực hành',
             defaults={
-                'description': 'M? b?i th?c h?nh WebGIS, quan s?t ?? layer c?t l?i r?i tr? l?i ph?n ghi ch? ng?n.',
+                'description': 'Mở bài thực hành WebGIS, quan sát đủ layer cốt lõi rồi trả lời phần ghi chú ngắn.',
                 'due_date': timezone.now() + timedelta(days=7),
                 'max_score': 10,
                 'created_by': classroom.teacher,
@@ -431,12 +404,11 @@ class Command(BaseCommand):
             },
         )
         created_ids.append(lesson_assignment.id)
-
         quiz_assignment, _ = Assignment.objects.update_or_create(
             classroom=classroom,
-            title=f'[HK1] {module["title"]} - quiz c?ng c?',
+            title=f'[HK1] {module["title"]} - quiz củng cố',
             defaults={
-                'description': 'L?m quiz c?ng c? sau khi h?c xong module.',
+                'description': 'Làm quiz củng cố sau khi học xong module.',
                 'due_date': timezone.now() + timedelta(days=10),
                 'max_score': 10,
                 'created_by': classroom.teacher,
@@ -448,26 +420,10 @@ class Command(BaseCommand):
         return created_ids
 
     def cleanup_legacy_content(self, classroom, curated_lesson_ids, curated_quiz_ids, curated_assignment_ids):
-        Lesson.objects.filter(
-            grade_level=CURRICULUM['grade_level'],
-            semester=CURRICULUM['semester'],
-            textbook_series=CURRICULUM['textbook_series'],
-        ).exclude(id__in=curated_lesson_ids).update(is_published=False)
-
-        Quiz.objects.filter(
-            grade_level=CURRICULUM['grade_level'],
-            semester=CURRICULUM['semester'],
-            textbook_series=CURRICULUM['textbook_series'],
-        ).exclude(id__in=curated_quiz_ids).update(is_published=False)
-
-        Classroom.objects.filter(
-            grade_level=CURRICULUM['grade_level'],
-            semester=CURRICULUM['semester'],
-            textbook_series=CURRICULUM['textbook_series'],
-        ).exclude(id=classroom.id).update(is_published=False)
-
+        Lesson.objects.filter(grade_level=CURRICULUM['grade_level'], semester=CURRICULUM['semester'], textbook_series=CURRICULUM['textbook_series']).exclude(id__in=curated_lesson_ids).update(is_published=False)
+        Quiz.objects.filter(grade_level=CURRICULUM['grade_level'], semester=CURRICULUM['semester'], textbook_series=CURRICULUM['textbook_series']).exclude(id__in=curated_quiz_ids).update(is_published=False)
+        Classroom.objects.filter(grade_level=CURRICULUM['grade_level'], semester=CURRICULUM['semester'], textbook_series=CURRICULUM['textbook_series']).exclude(id=classroom.id).update(is_published=False)
         Assignment.objects.filter(classroom=classroom).exclude(id__in=curated_assignment_ids).delete()
-
         valid_lesson_ids = set(curated_lesson_ids)
         valid_quiz_ids = set(curated_quiz_ids)
         for assignment in Assignment.objects.exclude(classroom=classroom).exclude(resource_id=None):
