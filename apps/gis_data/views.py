@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import connection
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from apps.core.pagination import LargeResultsSetPagination
+from apps.lessons.models import Lesson
 from .models import MapLayer, VietnamProvince
 
 

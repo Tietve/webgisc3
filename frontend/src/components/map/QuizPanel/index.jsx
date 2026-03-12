@@ -4,7 +4,7 @@ import { X, CheckCircle, ArrowLeft, ArrowRight, Trophy, RotateCcw, Loader, Alert
 import Panel from '../../ui/Panel'
 import { quizService } from '@services'
 
-const QuizPanel = ({ isOpen, onClose, quizId }) => {
+const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState(null)
   const [answers, setAnswers] = useState({})
@@ -51,7 +51,6 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
       setSelectedAnswer(null)
       return
     }
-
     setSelectedAnswer(answers[currentItem.id] ?? null)
   }, [currentItem, answers])
 
@@ -80,6 +79,7 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
       const response = await quizService.submit(quizId, formattedAnswers)
       setScore(response.score)
       setShowResults(true)
+      onQuizSubmitted?.(response)
     } catch (err) {
       console.error('Error submitting quiz:', err)
       alert(err.response?.data?.message || 'Failed to submit quiz')
@@ -144,33 +144,29 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
               </div>
             ) : null}
             {!showResults && quizData?.questions?.length ? (
-              <div className="w-full bg-white/20 rounded-full h-2 mt-3 overflow-hidden">
-                <motion.div className="bg-white h-full rounded-full" animate={{ width: `${progress}%` }} />
+              <div className="w-full bg-white/20 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div className="h-full bg-white rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
               </div>
             ) : null}
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="??ng quiz">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
           {loading ? (
-            <div className="h-full flex items-center justify-center text-center">
-              <div>
-                <Loader className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">?ang t?i quiz...</p>
-              </div>
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Loader className="w-8 h-8 animate-spin text-blue-500 mb-3" />
+              <p className="text-gray-600 dark:text-gray-400">?ang t?i quiz...</p>
             </div>
           ) : error ? (
             <Panel variant="floating" className="p-6 border border-red-200 dark:border-red-900">
-              <div className="flex items-start gap-3 text-red-600 dark:text-red-400">
-                <AlertCircle className="w-5 h-5 mt-0.5" />
-                <div>
-                  <p className="font-semibold">Kh?ng t?i ???c quiz</p>
-                  <p className="text-sm mt-1">{error}</p>
-                </div>
+              <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-3">
+                <AlertCircle className="w-5 h-5" />
+                <p className="font-semibold">Kh?ng t?i ???c quiz</p>
               </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
             </Panel>
           ) : showResults ? (
             <div className="space-y-6">
@@ -183,12 +179,19 @@ const QuizPanel = ({ isOpen, onClose, quizId }) => {
                 <div className="text-5xl font-extrabold text-blue-600 mb-2">{score}</div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Thang ?i?m 100</p>
               </Panel>
+
               <div className="flex gap-3">
                 <button
                   onClick={handleRestart}
                   className="flex-1 py-3 rounded-xl font-semibold bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="w-4 h-4" /> L?m l?i
+                </button>
+                <button
+                  onClick={onAskAi}
+                  className="flex-1 py-3 rounded-xl font-semibold bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300"
+                >
+                  H?i AI gi?i th?ch
                 </button>
                 <button
                   onClick={onClose}

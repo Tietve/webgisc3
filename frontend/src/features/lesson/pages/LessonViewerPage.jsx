@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import lessonService from '@services/lesson.service'
 import gisService from '@services/gis.service'
 import MapboxMap from '@components/map/MapboxMap'
+import AITutorPanel from '@components/ai/AITutorPanel'
 
 const LessonViewerPage = () => {
   const { id } = useParams()
@@ -14,6 +15,7 @@ const LessonViewerPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [mapReady, setMapReady] = useState(false)
+  const [isAiOpen, setIsAiOpen] = useState(false)
 
   // Track which layers are currently active on the map
   const activeLayers = useRef(new Set())
@@ -36,7 +38,7 @@ const LessonViewerPage = () => {
       const data = await lessonService.get(id)
       setLesson(data)
     } catch (err) {
-      setError(err.message || 'Khong the tai bai hoc')
+      setError(err.message || 'Kh?ng th? t?i b?i h?c')
     } finally {
       setLoading(false)
     }
@@ -181,7 +183,7 @@ const LessonViewerPage = () => {
       <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-300">Dang tai bai hoc...</p>
+          <p className="text-gray-300">?ang t?i b?i h?c...</p>
         </div>
       </div>
     )
@@ -193,13 +195,13 @@ const LessonViewerPage = () => {
       <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-md text-center">
           <div className="text-red-400 text-4xl mb-4">!</div>
-          <h2 className="text-xl font-bold text-white mb-2">Loi</h2>
+          <h2 className="text-xl font-bold text-white mb-2">L?i</h2>
           <p className="text-gray-300 mb-6">{error}</p>
           <button
             onClick={() => navigate('/map')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Quay lai ban do
+            Quay l?i b?n ??
           </button>
         </div>
       </div>
@@ -211,15 +213,15 @@ const LessonViewerPage = () => {
     return (
       <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-md text-center">
-          <h2 className="text-xl font-bold text-white mb-2">Bai hoc chua co noi dung</h2>
+          <h2 className="text-xl font-bold text-white mb-2">B?i h?c ch?a c? n?i dung</h2>
           <p className="text-gray-300 mb-6">
-            Bai hoc nay chua duoc cap nhat noi dung. Vui long chon bai hoc khac.
+            B?i h?c n?y ch?a ???c c?p nh?t n?i dung. Vui l?ng ch?n b?i h?c kh?c.
           </p>
           <button
             onClick={() => navigate('/map')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Quay lai ban do
+            Quay l?i b?n ??
           </button>
         </div>
       </div>
@@ -229,6 +231,29 @@ const LessonViewerPage = () => {
   const step = lesson.steps[currentStep]
   const isLastStep = currentStep === lesson.steps.length - 1
   const progress = ((currentStep + 1) / lesson.steps.length) * 100
+  const isAiSupported = lesson.grade_level === '10' && lesson.semester === '1' && lesson.textbook_series === 'canh-dieu'
+  const relatedLayers = (lesson.layers || []).slice(0, 5)
+  const map = mapRef.current?.getMap?.()
+  const aiContext = {
+    lesson_id: lesson.id,
+    quiz_id: lesson.quiz_id || undefined,
+    classroom_id: undefined,
+    lesson_step: currentStep,
+    active_layers: Array.from(activeLayers.current),
+    selected_feature: undefined,
+    map_state: map
+      ? {
+          center: [Number(map.getCenter().lng.toFixed(6)), Number(map.getCenter().lat.toFixed(6))],
+          zoom: Number(map.getZoom().toFixed(2)),
+          pitch: Number(map.getPitch().toFixed(2)),
+          bearing: Number(map.getBearing().toFixed(2)),
+        }
+      : undefined,
+    grade_level: lesson.grade_level,
+    semester: lesson.semester,
+    textbook_series: lesson.textbook_series,
+    module_code: lesson.module_code,
+  }
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-gray-900">
@@ -238,7 +263,7 @@ const LessonViewerPage = () => {
           <button
             onClick={() => navigate('/grade-10')}
             className="p-1.5 hover:bg-gray-700 rounded-lg transition shrink-0"
-            title="Quay lai"
+            title="Quay l?i"
           >
             <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -247,8 +272,17 @@ const LessonViewerPage = () => {
           <h1 className="text-sm font-semibold text-white truncate">{lesson.title}</h1>
         </div>
         <div className="text-xs text-gray-400 shrink-0 ml-3">
-          Buoc {currentStep + 1}/{lesson.steps.length}
+          B??c {currentStep + 1}/{lesson.steps.length}
         </div>
+        <button
+          onClick={() => isAiSupported && setIsAiOpen(true)}
+          disabled={!isAiSupported}
+          className={`ml-3 px-3 py-1.5 text-xs font-semibold rounded-full transition ${
+            isAiSupported ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+          }`}
+        >
+          AI Tutor
+        </button>
       </div>
 
       {/* Main split-screen */}
@@ -264,7 +298,7 @@ const LessonViewerPage = () => {
         </div>
 
         {/* Content panel (right / bottom on mobile) */}
-        <div className="lg:w-[35%] w-full flex-1 lg:flex-none lg:h-full flex flex-col bg-gray-800 border-l border-gray-700">
+        <div className="lg:w-[35%] w-full flex-1 lg:flex-none lg:h-full flex flex-col bg-slate-900 border-l border-slate-700">
           {/* Scrollable step content */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <AnimatePresence mode="wait">
@@ -274,10 +308,38 @@ const LessonViewerPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="p-5"
+                className="p-5 md:p-6 space-y-4"
               >
-                <div
-                  className="prose prose-invert prose-sm max-w-none
+                <div className="rounded-2xl border border-slate-700 bg-slate-800/80 p-4 shadow-lg">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">Bước {currentStep + 1}</p>
+                      <h2 className="mt-1 text-lg font-semibold text-white">{lesson.lesson_type === 'practice' ? 'Thực hành với WebGIS' : 'Khám phá kiến thức cốt lõi'}</h2>
+                    </div>
+                    <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-200">
+                      {lesson.module_code}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{lesson.description}</p>
+                </div>
+
+                {relatedLayers.length > 0 && (
+                  <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Layer quan sát chính</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {relatedLayers.map((layer) => (
+                        <span key={layer.id} className="rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1 text-xs text-slate-200">
+                          {layer.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4 md:p-5 shadow-inner">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Nhiệm vụ quan sát</p>
+                  <div
+                    className="prose prose-invert prose-sm max-w-none
                     prose-headings:text-white prose-headings:font-bold
                     prose-h1:text-2xl prose-h1:mb-3 prose-h1:mt-0
                     prose-h2:text-xl prose-h2:mb-2
@@ -288,6 +350,7 @@ const LessonViewerPage = () => {
                     prose-em:text-gray-200"
                   dangerouslySetInnerHTML={{ __html: formatMarkdown(step.popup_text) }}
                 />
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -314,7 +377,7 @@ const LessonViewerPage = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Truoc
+                Tr??c
               </button>
 
               {isLastStep ? (
@@ -325,14 +388,14 @@ const LessonViewerPage = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Hoan thanh
+                  Ho?n th?nh
                 </button>
               ) : (
                 <button
                   onClick={nextStep}
                   className="px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition flex items-center gap-1.5"
                 >
-                  Tiep theo
+                  Ti?p theo
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -342,6 +405,13 @@ const LessonViewerPage = () => {
           </div>
         </div>
       </div>
+
+      <AITutorPanel
+        isOpen={isAiOpen}
+        onClose={() => setIsAiOpen(false)}
+        context={aiContext}
+        title="AI Tutor theo b?i h?c"
+      />
     </div>
   )
 }

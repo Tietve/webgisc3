@@ -433,6 +433,15 @@ class Command(BaseCommand):
         Quiz.objects.filter(grade_level=CURRICULUM['grade_level'], semester=CURRICULUM['semester'], textbook_series=CURRICULUM['textbook_series']).exclude(id__in=curated_quiz_ids).update(is_published=False)
         Classroom.objects.filter(grade_level=CURRICULUM['grade_level'], semester=CURRICULUM['semester'], textbook_series=CURRICULUM['textbook_series']).exclude(id=classroom.id).update(is_published=False)
         Assignment.objects.filter(classroom=classroom).exclude(id__in=curated_assignment_ids).delete()
+
+        curated_layer_ids = set(
+            Lesson.objects.filter(id__in=curated_lesson_ids).values_list('layers__id', flat=True)
+        )
+        MapLayer.objects.filter(
+            school=CURRICULUM['school'],
+            grade=CURRICULUM['grade_level'],
+        ).exclude(id__in=curated_layer_ids).update(is_active=False)
+
         valid_lesson_ids = set(curated_lesson_ids)
         valid_quiz_ids = set(curated_quiz_ids)
         for assignment in Assignment.objects.exclude(classroom=classroom).exclude(resource_id=None):
