@@ -24,6 +24,13 @@ const AssignmentList = ({ classroomId, onAssignmentClick }) => {
   const isTeacher = user?.role === 'teacher'
 
   useEffect(() => {
+    if (!classroomId) {
+      setAssignments([])
+      setError(null)
+      setLoading(false)
+      return
+    }
+
     loadAssignments()
   }, [classroomId])
 

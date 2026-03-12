@@ -353,6 +353,12 @@ class AssignmentListSerializer(serializers.ModelSerializer):
             return 'late'
         return 'submitted'
 
+    def get_linked_resource_available(self, obj):
+        return resolve_assignment_resource(obj) is not None
+
+    def get_launch_url(self, obj):
+        return build_assignment_launch_url(obj)
+
 
 # ============================================================================
 # Submission Serializers

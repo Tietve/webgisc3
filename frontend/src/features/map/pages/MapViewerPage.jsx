@@ -11,6 +11,7 @@ import LessonsPanel from '@components/map/LessonsPanel'
 import QuizFloatingButton from '@components/map/QuizFloatingButton'
 import QuizPanel from '@components/map/QuizPanel'
 import DeadlineWidget from '@components/map/DeadlineWidget'
+import AITutorPanel from '@components/ai/AITutorPanel'
 import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
 import quizService from '@services/quiz.service'
@@ -50,6 +51,7 @@ const MapViewerPage = () => {
   useEffect(() => {
     const quizFromQuery = searchParams.get('quiz')
     setActiveQuizId(quizFromQuery || null)
+    setQuizQuestionContext([])
   }, [searchParams])
 
   useEffect(() => {
@@ -330,6 +332,31 @@ const MapViewerPage = () => {
     }
   }
 
+  const activeLessonId = useMemo(() => {
+    const queryLesson = searchParams.get('lesson')
+    if (queryLesson) {
+      return Number(queryLesson)
+    }
+
+    const firstModuleLesson = moduleLessons[0]
+    return firstModuleLesson?.id
+  }, [moduleLessons, searchParams])
+
+  const aiContext = useMemo(() => ({
+    lesson_id: activeLessonId,
+    quiz_id: activeQuizId ? Number(activeQuizId) : undefined,
+    classroom_id: searchParams.get('classroom') ? Number(searchParams.get('classroom')) : undefined,
+    lesson_step: undefined,
+    active_layers: Array.from(enabledLayers),
+    selected_feature: selectedFeature || undefined,
+    map_state: getMapState() || undefined,
+    question_context: quizQuestionContext,
+    grade_level: searchParams.get('grade') || '10',
+    semester: searchParams.get('semester') || '1',
+    textbook_series: searchParams.get('textbook') || 'canh-dieu',
+    module_code: searchParams.get('module') || moduleLessons[0]?.module_code || '',
+  }), [activeLessonId, activeQuizId, enabledLayers, moduleLessons, quizQuestionContext, searchParams, selectedFeature])
+
 
 
   useEffect(() => {
@@ -414,7 +441,7 @@ const MapViewerPage = () => {
             }}
           />
         )}
-        {activePanel === 'assignments' && (
+        {activePanel === 'assignments' && searchParams.get('classroom') && (
           <AssignmentList
             classroomId={null}
             onAssignmentClick={(assignment) => {
@@ -423,14 +450,12 @@ const MapViewerPage = () => {
             }}
           />
         )}
-        {activePanel === 'ai' && (
-          <AITutorPanel
-            isOpen={true}
-            onClose={() => setActivePanel(null)}
-            context={aiContext}
-            title="AI Tutor Địa lí 10"
-          />
-        )}
+        <AITutorPanel
+          isOpen={activePanel === 'ai'}
+          onClose={() => setActivePanel(null)}
+          context={aiContext}
+          title="AI Tutor Địa lí 10"
+        />
 
         {/* Quiz Floating Button */}
         <QuizFloatingButton
@@ -446,7 +471,9 @@ const MapViewerPage = () => {
           onQuizSubmitted={(payload) => {
             setQuizQuestionContext(payload.question_results || [])
           }}
-          onAskAi={() => {}}
+          onAskAi={() => {
+            setActivePanel('ai')
+          }}
         />
       </div>
     </div>

@@ -12,6 +12,9 @@ const assignmentService = {
    * @returns {Promise} Assignments list
    */
   async list(classroomId) {
+    if (!classroomId) {
+      return []
+    }
     const response = await api.get(ENDPOINTS.ASSIGNMENTS.LIST(classroomId))
     return response.data
   },

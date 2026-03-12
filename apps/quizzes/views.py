@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.db.models import Count, Q, Prefetch
 from django.utils import timezone
+from datetime import datetime
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from apps.core.permissions import IsStudent, IsTeacher
 from apps.classrooms.models import Assignment, Classroom, Enrollment, Submission
@@ -393,7 +394,19 @@ class QuizDeadlineView(APIView):
         if status_filter:
             combined = [item for item in combined if item['deadline_status'] == status_filter]
 
-        combined.sort(key=lambda item: item['due_date'] or timezone.now())
+        def _normalize_due_date(value):
+            if not value:
+                return timezone.now()
+            if isinstance(value, datetime):
+                return value
+            if isinstance(value, str):
+                try:
+                    return datetime.fromisoformat(value.replace('Z', '+00:00'))
+                except ValueError:
+                    return timezone.now()
+            return timezone.now()
+
+        combined.sort(key=lambda item: _normalize_due_date(item.get('due_date')))
         return Response(combined)
 
 
