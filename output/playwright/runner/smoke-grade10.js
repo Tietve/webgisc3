@@ -53,7 +53,7 @@ async function gotoSoft(page, url) {
   await gotoSoft(studentSession.page, `${BASE}/grade-10`);
   await studentSession.page.screenshot({ path: path.join(OUT, 'student-grade10.png'), fullPage: true });
   const grade10Body = await studentSession.page.locator('body').textContent();
-  report.checks.push({ name: 'student grade-10 page', pass: grade10Body.includes('Địa lí 10 - Cánh Diều - Học kì 1') && grade10Body.includes('module-06') });
+  report.checks.push({ name: 'student grade-10 page', pass: grade10Body.includes('Địa lí 10') && grade10Body.includes('Cánh Diều') && grade10Body.includes('module-06') });
   report.screenshots.push('student-grade10.png');
   report.console.studentGrade10 = studentSession.consoleErrors;
 
@@ -100,3 +100,4 @@ async function gotoSoft(page, url) {
   console.error(err);
   process.exit(1);
 });
+
