@@ -21,6 +21,7 @@ from .services import (
     AiTutorContextBuilder,
     AiTutorContextError,
     build_followups,
+    build_map_actions,
     build_prompt,
     normalize_assistant_message,
 )
@@ -83,6 +84,8 @@ class AiTutorRespondView(APIView):
             conversation.title = conversation.title or payload['message'][:80]
             conversation.save(update_fields=['title', 'updated_at'])
 
+        map_actions = build_map_actions(payload['message'], used_context)
+
         return Response(
             {
                 'conversation_id': conversation.id,
@@ -90,6 +93,7 @@ class AiTutorRespondView(APIView):
                 'used_context': used_context,
                 'guardrail_flags': guardrail_flags,
                 'suggested_followups': build_followups(used_context),
+                'map_actions': map_actions,
                 'message_id': assistant.id,
             },
             status=status.HTTP_200_OK,

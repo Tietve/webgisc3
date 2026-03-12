@@ -4,6 +4,7 @@ Seed curated Địa lí 10 - Cánh Diều - Học kì 1 content.
 from datetime import timedelta
 import json
 from pathlib import Path
+import unicodedata
 
 from django.contrib.gis.geos import GEOSGeometry, LineString, MultiPolygon, Point, Polygon
 from django.core.management.base import BaseCommand
@@ -303,6 +304,14 @@ class Command(BaseCommand):
             return MultiPolygon(geom, srid=4326)
         return geom if geom.geom_type == 'MultiPolygon' else None
 
+    def build_short_code(self, raw_code, name):
+        candidate = str(raw_code or '').strip()
+        if candidate and candidate.lower() != 'none' and len(candidate) <= 10:
+            return candidate.upper()
+        normalized = unicodedata.normalize('NFD', str(name or ''))
+        ascii_only = ''.join(ch for ch in normalized if ch.isascii() and ch.isalnum()).upper()
+        return f"VN{ascii_only[:8]}"[:10] or 'VNUNKNOWN'
+
     def ensure_public_provinces(self):
         features = self.load_geojson_features('vietnam_provinces.geojson')
         if not features:
@@ -310,7 +319,7 @@ class Command(BaseCommand):
         seen_codes = []
         for feature in features:
             props = feature.get('properties', {})
-            code = props.get('code') or props.get('name')
+            code = self.build_short_code(props.get('code'), props.get('name'))
             geometry = self.to_multipolygon_geometry(feature.get('geometry'))
             if not geometry:
                 continue

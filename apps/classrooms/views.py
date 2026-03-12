@@ -6,9 +6,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from apps.core.permissions import IsTeacher, IsStudent, IsOwnerOrTeacher
-from .models import Classroom, Enrollment, Announcement, Assignment, Submission, Grade
+from apps.lessons.models import Lesson
+from apps.quizzes.models import Quiz, QuizSubmission
+from .models import Classroom, Enrollment, Announcement, AnnouncementRead, Assignment, Submission, Grade, LessonProgress
 from .serializers import (
     ClassroomSerializer,
     ClassroomCreateSerializer,
@@ -22,7 +25,8 @@ from .serializers import (
     SubmissionSerializer,
     SubmissionCreateSerializer,
     GradeSerializer,
-    GradeCreateUpdateSerializer
+    GradeCreateUpdateSerializer,
+    StudentProgressSummarySerializer,
 )
 
 
@@ -95,7 +99,12 @@ class ClassroomViewSet(viewsets.ModelViewSet):
         tags=['Classrooms']
     )
     def create(self, request, *args, **kwargs):
-        # Any authenticated user can create a classroom
+        if request.user.role != 'teacher':
+            return Response(
+                {'error': 'Only teachers can create classrooms'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         classroom = serializer.save()
@@ -140,6 +149,98 @@ class ClassroomViewSet(viewsets.ModelViewSet):
 
         enrollments = Enrollment.objects.filter(classroom=classroom).select_related('student')
         serializer = StudentListSerializer(enrollments, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="Student progress overview",
+        description="Get aggregated lesson, announcement, assignment, and quiz progress for each student in the classroom",
+        responses={200: StudentProgressSummarySerializer(many=True)},
+        tags=['Classrooms']
+    )
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsTeacher], url_path='students-progress')
+    def students_progress(self, request, pk=None):
+        classroom = self.get_object()
+
+        if classroom.teacher != request.user:
+            return Response(
+                {'error': 'You do not have permission to view student progress for this classroom'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        enrollments = Enrollment.objects.filter(classroom=classroom).select_related('student')
+        assignments = Assignment.objects.filter(classroom=classroom)
+        assignment_ids = list(assignments.values_list('id', flat=True))
+        assignment_total = len(assignment_ids)
+
+        assigned_lesson_ids = list(
+            assignments.filter(resource_type='lesson', resource_id__isnull=False)
+            .values_list('resource_id', flat=True)
+        )
+        progressed_lesson_ids = list(
+            LessonProgress.objects.filter(classroom=classroom).values_list('lesson_id', flat=True).distinct()
+        )
+        lesson_ids = list({*assigned_lesson_ids, *progressed_lesson_ids})
+        lessons_total = len(lesson_ids)
+
+        quizzes_qs = Quiz.objects.filter(classroom=classroom, is_published=True)
+        quizzes_total = quizzes_qs.count()
+        announcement_total = Announcement.objects.filter(classroom=classroom).count()
+
+        result = []
+        for enrollment in enrollments:
+            student = enrollment.student
+            student_submissions = Submission.objects.filter(assignment_id__in=assignment_ids, student=student)
+            assignments_submitted = student_submissions.count()
+            assignments_graded = student_submissions.filter(grade__isnull=False).count()
+
+            student_quiz_submissions = QuizSubmission.objects.filter(quiz__classroom=classroom, student=student)
+            quizzes_submitted = student_quiz_submissions.count()
+            average_quiz_score = student_quiz_submissions.aggregate(avg=Avg('score'))['avg']
+
+            lesson_progress_qs = LessonProgress.objects.filter(classroom=classroom, student=student)
+            if lesson_ids:
+                lesson_progress_qs = lesson_progress_qs.filter(lesson_id__in=lesson_ids)
+            lessons_started = lesson_progress_qs.exclude(status='not_started').count()
+            lessons_completed = lesson_progress_qs.filter(status='completed').count()
+            average_lesson_progress = lesson_progress_qs.aggregate(avg=Avg('progress_percent'))['avg'] or 0
+
+            announcements_read = AnnouncementRead.objects.filter(
+                announcement__classroom=classroom,
+                student=student,
+            ).count()
+            announcements_unread = max(announcement_total - announcements_read, 0)
+
+            ratios = []
+            if announcement_total:
+                ratios.append(announcements_read / announcement_total)
+            if assignment_total:
+                ratios.append(assignments_submitted / assignment_total)
+            if quizzes_total:
+                ratios.append(quizzes_submitted / quizzes_total)
+            if lessons_total:
+                ratios.append(lessons_completed / lessons_total)
+            overall_progress_percent = round((sum(ratios) / len(ratios)) * 100, 2) if ratios else 0
+
+            result.append({
+                'student_id': student.id,
+                'student_email': student.email,
+                'enrolled_at': enrollment.enrolled_at,
+                'announcements_read': announcements_read,
+                'announcements_unread': announcements_unread,
+                'assignments_total': assignment_total,
+                'assignments_submitted': assignments_submitted,
+                'assignments_graded': assignments_graded,
+                'quizzes_total': quizzes_total,
+                'quizzes_submitted': quizzes_submitted,
+                'average_quiz_score': round(float(average_quiz_score), 2) if average_quiz_score is not None else None,
+                'lessons_total': lessons_total,
+                'lessons_started': lessons_started,
+                'lessons_completed': lessons_completed,
+                'average_lesson_progress': round(float(average_lesson_progress), 2),
+                'overall_progress_percent': overall_progress_percent,
+            })
+
+        serializer = StudentProgressSummarySerializer(result, many=True)
         return Response(serializer.data)
 
 
@@ -299,6 +400,22 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
             )
 
         return super().destroy(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Mark announcement as read",
+        description="Create a read receipt for the current student",
+        responses={200: OpenApiResponse(description="Marked as read")},
+        tags=['Announcements']
+    )
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='read')
+    def mark_read(self, request, *args, **kwargs):
+        announcement = self.get_object()
+
+        if request.user.role != 'student':
+            return Response({'message': 'Read tracking is only available for students'}, status=status.HTTP_200_OK)
+
+        AnnouncementRead.objects.get_or_create(announcement=announcement, student=request.user)
+        return Response({'message': 'Announcement marked as read'}, status=status.HTTP_200_OK)
 
 
 # ============================================================================

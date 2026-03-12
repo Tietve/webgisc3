@@ -3,6 +3,7 @@ Models for classroom and enrollment management.
 """
 import random
 import string
+from django.apps import apps
 from django.db import models
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
@@ -16,7 +17,13 @@ from apps.core.validators import (
 
 def generate_enrollment_code():
     """Generate a unique 8-character enrollment code."""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    alphabet = string.ascii_uppercase + string.digits
+    ClassroomModel = apps.get_model('classrooms', 'Classroom')
+    for _ in range(20):
+        code = ''.join(random.choices(alphabet, k=8))
+        if not ClassroomModel.objects.filter(enrollment_code=code).exists():
+            return code
+    return ''.join(random.choices(alphabet, k=8))
 
 
 class Classroom(models.Model):
@@ -137,6 +144,36 @@ class Announcement(models.Model):
 
     def __str__(self):
         return f"{self.author.email} - {self.classroom.name} - {self.created_at.strftime('%Y-%m-%d')}"
+
+
+class AnnouncementRead(models.Model):
+    """Track whether a student has read a classroom announcement."""
+    announcement = models.ForeignKey(
+        Announcement,
+        on_delete=models.CASCADE,
+        related_name='read_receipts',
+        help_text='Announcement that was read'
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='announcement_reads',
+        help_text='Student who read the announcement'
+    )
+    read_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'announcement_reads'
+        verbose_name = 'Announcement Read'
+        verbose_name_plural = 'Announcement Reads'
+        unique_together = ('announcement', 'student')
+        ordering = ['-read_at']
+        indexes = [
+            models.Index(fields=['student', 'announcement']),
+        ]
+
+    def __str__(self):
+        return f"{self.student.email} read announcement {self.announcement_id}"
 
 
 class Assignment(models.Model):
@@ -350,3 +387,51 @@ class Grade(models.Model):
         """Calculate grade as percentage of max score."""
         max_score = self.submission.assignment.max_score
         return (self.score / max_score * 100) if max_score > 0 else 0
+
+
+class LessonProgress(models.Model):
+    """Track per-student progress for a lesson inside a classroom."""
+    STATUS_CHOICES = [
+        ('not_started', 'Not Started'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+    ]
+
+    classroom = models.ForeignKey(
+        Classroom,
+        on_delete=models.CASCADE,
+        related_name='lesson_progress_entries',
+        help_text='Classroom where the lesson is being tracked'
+    )
+    lesson = models.ForeignKey(
+        'lessons.Lesson',
+        on_delete=models.CASCADE,
+        related_name='progress_entries',
+        help_text='Lesson being tracked'
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='lesson_progress_entries',
+        help_text='Student progressing through the lesson'
+    )
+    current_step = models.PositiveIntegerField(default=0, help_text='Current lesson step index')
+    progress_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started')
+    started_at = models.DateTimeField(null=True, blank=True)
+    last_viewed_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'lesson_progress'
+        verbose_name = 'Lesson Progress'
+        verbose_name_plural = 'Lesson Progress'
+        unique_together = ('classroom', 'lesson', 'student')
+        ordering = ['-last_viewed_at']
+        indexes = [
+            models.Index(fields=['classroom', 'student']),
+            models.Index(fields=['lesson', 'student']),
+        ]
+
+    def __str__(self):
+        return f"{self.student.email} - {self.lesson.title} ({self.progress_percent}%)"

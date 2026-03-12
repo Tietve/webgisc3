@@ -6,7 +6,7 @@ from django.utils import timezone
 from apps.users.serializers import UserSerializer
 from apps.lessons.models import Lesson
 from apps.quizzes.models import Quiz
-from .models import Classroom, Enrollment, Announcement, Assignment, Submission, Grade
+from .models import Classroom, Enrollment, Announcement, AnnouncementRead, Assignment, Submission, Grade, LessonProgress
 
 
 CURATED_MODULE_CODES = {'module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06'}
@@ -39,9 +39,9 @@ def build_assignment_launch_url(assignment):
     if not resource:
         return None
     if assignment.resource_type == 'lesson':
-        return f'/lessons/{resource.id}'
+        return f'/lessons/{resource.id}?classroomId={assignment.classroom_id}'
     if assignment.resource_type == 'quiz':
-        return f'/quiz/{resource.id}'
+        return f'/quiz/{resource.id}?classroomId={assignment.classroom_id}'
     return None
 
 
@@ -115,6 +115,10 @@ class EnrollmentCreateSerializer(serializers.Serializer):
             classroom = Classroom.objects.get(enrollment_code=value)
         except Classroom.DoesNotExist:
             raise serializers.ValidationError("Invalid enrollment code.")
+
+        user = self.context['request'].user
+        if user.role != 'student':
+            raise serializers.ValidationError('Only students can join a classroom using enrollment code.')
         return value
 
     def create(self, validated_data):
@@ -157,15 +161,35 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     """
     author_email = serializers.EmailField(source='author.email', read_only=True)
     author_name = serializers.SerializerMethodField()
+    is_read = serializers.SerializerMethodField()
+    read_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Announcement
-        fields = ('id', 'classroom', 'author', 'author_email', 'author_name', 'content', 'created_at', 'updated_at')
+        fields = (
+            'id', 'classroom', 'author', 'author_email', 'author_name',
+            'content', 'is_read', 'read_at', 'created_at', 'updated_at'
+        )
         read_only_fields = ('id', 'author', 'created_at', 'updated_at')
 
     def get_author_name(self, obj):
         """Get author's display name (email for now)."""
         return obj.author.email
+
+    def get_is_read(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or getattr(user, 'role', None) != 'student':
+            return None
+        return AnnouncementRead.objects.filter(announcement=obj, student=user).exists()
+
+    def get_read_at(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or getattr(user, 'role', None) != 'student':
+            return None
+        record = AnnouncementRead.objects.filter(announcement=obj, student=user).first()
+        return record.read_at if record else None
 
     def create(self, validated_data):
         """Create announcement with the authenticated user as author."""
@@ -536,6 +560,61 @@ class GradeCreateUpdateSerializer(serializers.ModelSerializer):
                 )
 
         return data
+
+
+class LessonProgressSerializer(serializers.ModelSerializer):
+    """Serializer for student lesson progress records."""
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+    student_email = serializers.EmailField(source='student.email', read_only=True)
+
+    class Meta:
+        model = LessonProgress
+        fields = (
+            'id', 'classroom', 'lesson', 'lesson_title', 'student', 'student_email',
+            'current_step', 'progress_percent', 'status', 'started_at',
+            'last_viewed_at', 'completed_at'
+        )
+        read_only_fields = ('id', 'student', 'started_at', 'last_viewed_at', 'completed_at')
+
+
+class LessonProgressUpsertSerializer(serializers.Serializer):
+    """Serializer for updating lesson progress from the lesson viewer."""
+    classroom_id = serializers.IntegerField(required=False)
+    current_step = serializers.IntegerField(min_value=0, required=False, default=0)
+    progress_percent = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=0)
+    status = serializers.ChoiceField(choices=LessonProgress.STATUS_CHOICES, required=False, default='in_progress')
+
+    def validate_classroom_id(self, value):
+        request = self.context['request']
+        try:
+            classroom = Classroom.objects.get(id=value, is_published=True)
+        except Classroom.DoesNotExist:
+            raise serializers.ValidationError('Classroom not found.')
+
+        user = request.user
+        if classroom.teacher != user and not Enrollment.objects.filter(classroom=classroom, student=user).exists():
+            raise serializers.ValidationError('You do not have access to this classroom.')
+        return value
+
+
+class StudentProgressSummarySerializer(serializers.Serializer):
+    """Aggregated classroom progress metrics for a student."""
+    student_id = serializers.UUIDField()
+    student_email = serializers.EmailField()
+    enrolled_at = serializers.DateTimeField()
+    announcements_read = serializers.IntegerField()
+    announcements_unread = serializers.IntegerField()
+    assignments_total = serializers.IntegerField()
+    assignments_submitted = serializers.IntegerField()
+    assignments_graded = serializers.IntegerField()
+    quizzes_total = serializers.IntegerField()
+    quizzes_submitted = serializers.IntegerField()
+    average_quiz_score = serializers.FloatField(allow_null=True)
+    lessons_total = serializers.IntegerField()
+    lessons_started = serializers.IntegerField()
+    lessons_completed = serializers.IntegerField()
+    average_lesson_progress = serializers.FloatField()
+    overall_progress_percent = serializers.FloatField()
 
     def create(self, validated_data):
         """Create grade with submission and graded_by from context."""

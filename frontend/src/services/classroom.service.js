@@ -46,6 +46,11 @@ const classroomService = {
     return response.data
   },
 
+  async getStudentsProgress(id) {
+    const response = await api.get(ENDPOINTS.CLASSROOMS.STUDENTS_PROGRESS(id))
+    return response.data
+  },
+
   /**
    * Join classroom with enrollment code (students only)
    * @param {string} enrollmentCode - 8-character code

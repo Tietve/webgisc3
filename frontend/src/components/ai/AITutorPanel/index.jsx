@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Bot, Loader2, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react'
+import { Bot, Loader2, Send, Sparkles, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 import { aiTutorService } from '@services'
 
 const EMPTY_CONTEXT = {
@@ -16,7 +16,86 @@ const EMPTY_CONTEXT = {
   textbook_series: '',
 }
 
-const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => {
+const SECTION_EMOJIS = ['📘', '🧠', '🗺️', '💡', '❓']
+
+const SECTION_STYLES = {
+  '📘': {
+    card: 'border-blue-200 bg-blue-50/90',
+    title: 'text-blue-900',
+  },
+  '🧠': {
+    card: 'border-violet-200 bg-violet-50/90',
+    title: 'text-violet-900',
+  },
+  '🗺️': {
+    card: 'border-emerald-200 bg-emerald-50/90',
+    title: 'text-emerald-900',
+  },
+  '💡': {
+    card: 'border-amber-200 bg-amber-50/90',
+    title: 'text-amber-900',
+  },
+  '❓': {
+    card: 'border-indigo-200 bg-indigo-50/90',
+    title: 'text-indigo-900',
+  },
+  default: {
+    card: 'border-slate-100 bg-slate-50/80',
+    title: 'text-slate-900',
+  },
+}
+
+const splitAssistantSections = (content) => {
+  const lines = (content || '').split('\n')
+  const sections = []
+  let current = null
+
+  lines.forEach((rawLine) => {
+    const line = rawLine.trim()
+    if (!line) {
+      if (current) current.body.push('')
+      return
+    }
+
+    const icon = SECTION_EMOJIS.find((emoji) => line.startsWith(emoji))
+    if (icon) {
+      if (current) sections.push(current)
+      current = { title: line, body: [] }
+      return
+    }
+
+    if (!current) {
+      current = { title: '', body: [] }
+    }
+    current.body.push(rawLine)
+  })
+
+  if (current) sections.push(current)
+  return sections.length ? sections : [{ title: '', body: [content] }]
+}
+
+const AssistantMessage = ({ content }) => {
+  const sections = useMemo(() => splitAssistantSections(content), [content])
+
+  return (
+    <div className="space-y-3">
+      {sections.map((section, index) => {
+        const icon = SECTION_EMOJIS.find((emoji) => section.title?.startsWith(emoji))
+        const style = SECTION_STYLES[icon] || SECTION_STYLES.default
+
+        return (
+        <div key={`${section.title}-${index}`} className={`rounded-2xl border p-3 shadow-sm ${style.card}`}>
+          {section.title ? <div className={`mb-2 text-sm font-semibold ${style.title}`}>{section.title}</div> : null}
+          <div className="prose prose-sm max-w-none text-sm leading-6 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-strong:text-slate-900 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5">
+            <ReactMarkdown>{section.body.join('\n').trim()}</ReactMarkdown>
+          </div>
+        </div>
+      )})}
+    </div>
+  )
+}
+
+const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor', onAssistantResponse }) => {
   const safeContext = useMemo(() => ({ ...EMPTY_CONTEXT, ...(context || {}) }), [context])
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
@@ -51,16 +130,16 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
   }, [safeContext])
 
   const placeholder = useMemo(() => {
-    if (safeContext.lesson_id) return 'Ví dụ: Tóm tắt bài này giúp em thật dễ hiểu'
+    if (safeContext.lesson_id) return 'Ví dụ: Tóm gọn bài này giúp em thật dễ nhớ'
     if (safeContext.module_code) return 'Ví dụ: Module này có những ý chính nào?'
     if (safeContext.active_layers?.length) return 'Ví dụ: Bản đồ này đang thể hiện điều gì?'
-    return 'Ví dụ: Giúp em ôn tập phần Địa lí 10 học kì 1'
+    return 'Ví dụ: Giúp em ôn tập học kì 1 thật ngắn gọn'
   }, [safeContext])
 
   const quickHintBody = useMemo(() => {
-    if (safeContext.lesson_id) return 'Em có thể hỏi về bài học, bước hiện tại, bản đồ liên quan, hoặc câu quiz vừa làm.'
-    if (safeContext.module_code) return 'Em có thể yêu cầu AI tóm tắt module, chỉ ra ý chính, hoặc gợi ý cách học nhanh.'
-    return 'Em có thể hỏi về bản đồ đang xem, phần kiến thức đang học, hoặc yêu cầu ôn tập học kì 1.'
+    if (safeContext.lesson_id) return 'AI có thể trả lời theo kiểu tóm gọn, dễ hiểu hơn, có mẹo nhớ nhanh và câu hỏi tự kiểm tra.'
+    if (safeContext.module_code) return 'AI có thể tóm tắt module, gom ý chính, và gợi ý cách học nhanh hơn.'
+    return 'AI có thể giải thích bản đồ, tóm gọn kiến thức, hoặc giúp em ôn tập học kì 1.'
   }, [safeContext])
 
   useEffect(() => {
@@ -79,11 +158,7 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
         setMessages(
           (data.messages || [])
             .filter((message) => message.role !== 'system')
-            .map((message) => ({
-              id: message.id,
-              role: message.role,
-              content: message.content,
-            }))
+            .map((message) => ({ id: message.id, role: message.role, content: message.content }))
         )
       } catch (err) {
         console.error('Failed to load AI conversation:', err)
@@ -112,6 +187,7 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
         ...safeContext,
       })
       setConversationId(response.conversation_id)
+      onAssistantResponse?.(response)
       setMessages((prev) => [
         ...prev,
         {
@@ -140,6 +216,8 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
   const contextSummary = safeContext.grade_level
     ? `Lớp ${safeContext.grade_level} • HK${safeContext.semester} • Cánh Diều${safeContext.module_code ? ` • ${safeContext.module_code}` : ''}`
     : 'Trợ lý học tập WebGIS'
+
+  const smartActions = ['Tóm ngắn hơn', 'Giải thích dễ hiểu hơn', 'Hỏi em 1 câu kiểm tra']
 
   return (
     <div className="fixed inset-y-0 right-0 z-[1100] flex w-full max-w-md flex-col border-l border-gray-200 bg-white shadow-2xl">
@@ -172,31 +250,42 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
       <div className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-white to-slate-50 px-4 py-4">
         {messages.length === 0 && (
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-            <p className="font-semibold">Gợi ý nhanh</p>
+            <div className="flex items-center gap-2 font-semibold">
+              <Sparkles className="h-4 w-4" />
+              <span>Gợi ý nhanh</span>
+            </div>
             <p className="mt-1 text-blue-800">{quickHintBody}</p>
           </div>
         )}
 
         {messages.map((message) => (
           <div key={message.id} className={`rounded-2xl px-4 py-3 shadow-sm ${message.role === 'assistant' ? 'border border-blue-100 bg-white text-gray-800' : 'ml-8 bg-blue-600 text-white'}`}>
-            {message.role === 'assistant' ? (
-              <div className="prose prose-sm max-w-none text-sm leading-6 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-strong:text-slate-900 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5">
-                <ReactMarkdown>{message.content}</ReactMarkdown>
-              </div>
-            ) : (
-              <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
-            )}
+            {message.role === 'assistant' ? <AssistantMessage content={message.content} /> : <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>}
 
-            {message.role === 'assistant' && (
-              <div className="mt-3 flex items-center gap-2 text-gray-500">
-                <button onClick={() => sendFeedback(message.id, 1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'Hữu ích'}>
-                  <ThumbsUp className="h-4 w-4" />
-                </button>
-                <button onClick={() => sendFeedback(message.id, -1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'Chưa hữu ích'}>
-                  <ThumbsDown className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+            {message.role === 'assistant' ? (
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {smartActions.map((action) => (
+                    <button
+                      key={`${message.id}-${action}`}
+                      onClick={() => sendMessage(`${action}: ${message.content.slice(0, 120)}`)}
+                      className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100"
+                    >
+                      {action}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-3 flex items-center gap-2 text-gray-500">
+                  <button onClick={() => sendFeedback(message.id, 1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'Hữu ích'}>
+                    <ThumbsUp className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => sendFeedback(message.id, -1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'Chưa hữu ích'}>
+                    <ThumbsDown className="h-4 w-4" />
+                  </button>
+                </div>
+              </>
+            ) : null}
 
             {message.followups?.length ? (
               <div className="mt-3 flex flex-wrap gap-2">

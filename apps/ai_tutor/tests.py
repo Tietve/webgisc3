@@ -8,7 +8,7 @@ from apps.ai_tutor.models import AiConversation, AiMessage, AiMessageFeedback
 from apps.ai_tutor.services import normalize_assistant_message
 from apps.classrooms.models import Classroom
 from apps.gis_data.models import MapLayer
-from apps.lessons.models import Lesson, LessonStep
+from apps.lessons.models import Lesson, LessonStep, MapAction
 from apps.quizzes.models import Quiz
 
 
@@ -157,6 +157,35 @@ class AiTutorApiTests(APITestCase):
         self.assertEqual(response.data['used_context']['mode'], 'semester_review')
         self.assertEqual(response.data['assistant_message'], 'Đây là khung ôn tập học kì 1.')
         mock_chat.assert_called_once()
+
+
+    @patch('apps.ai_tutor.views.AiProviderClient.chat', return_value='??y l? ph?n m? ??u c?a b?i h?c.')
+    def test_returns_place_map_actions_for_known_location_question(self, mock_chat):
+        payload = self.base_payload()
+        payload['message'] = 'M? ? ??u v?y ??'
+
+        response = self.client.post(self.url, payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        action_types = [action['type'] for action in response.data['map_actions']]
+        self.assertIn('fly_to_place', action_types)
+        self.assertIn('open_popup', action_types)
+
+    @patch('apps.ai_tutor.views.AiProviderClient.chat', return_value='Em xem ?i?m tr?ng t?m n?y nh?.')
+    def test_returns_step_map_action_when_lesson_step_has_map_action(self, mock_chat):
+        step_action = MapAction.objects.create(
+            action_type='flyTo',
+            payload={'center': [105.83416, 21.027764], 'zoom': 6},
+        )
+        step = self.lesson.steps.first()
+        step.map_action = step_action
+        step.save(update_fields=['map_action'])
+
+        response = self.client.post(self.url, self.base_payload(), format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['used_context']['lesson']['current_step']['map_action']['action_type'], 'flyTo')
+        self.assertTrue(any(action['type'] == 'fly_to_place' for action in response.data['map_actions']))
 
     @patch('apps.ai_tutor.views.AiProviderClient.chat', side_effect=Exception('boom'))
     def test_provider_unexpected_error_returns_502(self, mock_chat):

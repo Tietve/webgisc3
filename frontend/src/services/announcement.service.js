@@ -52,5 +52,12 @@ export const announcementService = {
       `${ANNOUNCEMENTS_BASE_URL}/${classroomId}/announcements/${announcementId}/`
     )
     return response.data
+  },
+
+  markRead: async (classroomId, announcementId) => {
+    const response = await api.post(
+      `${ANNOUNCEMENTS_BASE_URL}/${classroomId}/announcements/${announcementId}/read/`
+    )
+    return response.data
   }
 }

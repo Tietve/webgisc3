@@ -18,11 +18,16 @@ const ClassroomDetailPage = () => {
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
   const [announcementText, setAnnouncementText] = useState('')
   const [announcements, setAnnouncements] = useState([])
+  const [studentsProgress, setStudentsProgress] = useState([])
+  const [studentsProgressLoading, setStudentsProgressLoading] = useState(false)
 
   // Assignment states
   const [selectedAssignment, setSelectedAssignment] = useState(null)
   const [showSubmissionForm, setShowSubmissionForm] = useState(false)
   const [showGradingInterface, setShowGradingInterface] = useState(false)
+
+  // Check if current user is the owner of this classroom
+  const isOwner = classroom?.teacher_email === user?.email
 
   useEffect(() => {
     loadClassroom()
@@ -41,6 +46,12 @@ const ClassroomDetailPage = () => {
     }
   }, [id, searchParams])
 
+  useEffect(() => {
+    if (activeTab === 'people' && isOwner) {
+      loadStudentsProgress()
+    }
+  }, [activeTab, isOwner, id])
+
   const loadClassroom = async () => {
     try {
       const foundClassroom = await classroomService.get(id)
@@ -58,8 +69,31 @@ const ClassroomDetailPage = () => {
       const data = await announcementService.list(id)
       const announcementsList = Array.isArray(data) ? data : (data.results || [])
       setAnnouncements(announcementsList)
+
+      if (user?.role === 'student') {
+        const unreadAnnouncements = announcementsList.filter((announcement) => !announcement.is_read)
+        if (unreadAnnouncements.length > 0) {
+          await Promise.all(
+            unreadAnnouncements.map((announcement) => announcementService.markRead(id, announcement.id))
+          )
+          setAnnouncements((current) => current.map((announcement) => ({ ...announcement, is_read: true })))
+        }
+      }
     } catch (error) {
       console.error('Error loading announcements:', error)
+    }
+  }
+
+  const loadStudentsProgress = async () => {
+    try {
+      setStudentsProgressLoading(true)
+      const data = await classroomService.getStudentsProgress(id)
+      const studentsList = Array.isArray(data) ? data : (data.results || [])
+      setStudentsProgress(studentsList)
+    } catch (error) {
+      console.error('Error loading students progress:', error)
+    } finally {
+      setStudentsProgressLoading(false)
     }
   }
 
@@ -115,8 +149,11 @@ const ClassroomDetailPage = () => {
     setShowGradingInterface(false)
   }
 
-  // Check if current user is the owner of this classroom
-  const isOwner = classroom?.teacher_email === user?.email
+  const getProgressTone = (value) => {
+    if (value >= 80) return 'bg-emerald-500'
+    if (value >= 50) return 'bg-amber-500'
+    return 'bg-rose-500'
+  }
 
   // Generate random gradient for classroom header (same function as ClassroomsPage)
   const getClassroomGradient = (classroomId) => {
@@ -409,9 +446,61 @@ const ClassroomDetailPage = () => {
                       <p>Chưa có học sinh nào</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {/* Student list will be loaded here */}
-                      <p className="text-gray-500 text-sm">Đang tải danh sách học sinh...</p>
+                    <div className="space-y-4">
+                      {studentsProgressLoading ? (
+                        <p className="text-gray-500 text-sm">Đang tải tiến trình học sinh...</p>
+                      ) : (
+                        studentsProgress.map((student) => (
+                          <div key={student.student_id} className="rounded-2xl border border-slate-200 p-4 shadow-sm">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                              <div>
+                                <p className="font-semibold text-slate-900">{student.student_email}</p>
+                                <p className="text-sm text-slate-500">
+                                  Tham gia: {new Date(student.enrolled_at).toLocaleDateString('vi-VN')}
+                                </p>
+                              </div>
+                              <div className="min-w-[220px]">
+                                <div className="mb-2 flex items-center justify-between text-sm font-medium text-slate-600">
+                                  <span>Tổng tiến trình</span>
+                                  <span>{student.overall_progress_percent}%</span>
+                                </div>
+                                <div className="h-3 rounded-full bg-slate-200">
+                                  <div
+                                    className={`h-3 rounded-full ${getProgressTone(student.overall_progress_percent)}`}
+                                    style={{ width: `${student.overall_progress_percent}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                              <div className="rounded-xl bg-slate-50 p-3">
+                                <p className="text-xs uppercase tracking-wide text-slate-500">Thông báo</p>
+                                <p className="mt-2 text-sm text-slate-700">Đã đọc {student.announcements_read}</p>
+                                <p className="text-sm text-rose-600">Chưa đọc {student.announcements_unread}</p>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 p-3">
+                                <p className="text-xs uppercase tracking-wide text-slate-500">Bài tập</p>
+                                <p className="mt-2 text-sm text-slate-700">Đã nộp {student.assignments_submitted}/{student.assignments_total}</p>
+                                <p className="text-sm text-emerald-600">Đã chấm {student.assignments_graded}</p>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 p-3">
+                                <p className="text-xs uppercase tracking-wide text-slate-500">Bài học</p>
+                                <p className="mt-2 text-sm text-slate-700">Đã học {student.lessons_started}/{student.lessons_total}</p>
+                                <p className="text-sm text-blue-600">Hoàn thành {student.lessons_completed}</p>
+                                <p className="text-sm text-slate-500">TB tiến độ {student.average_lesson_progress}%</p>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 p-3">
+                                <p className="text-xs uppercase tracking-wide text-slate-500">Quiz</p>
+                                <p className="mt-2 text-sm text-slate-700">Đã làm {student.quizzes_submitted}/{student.quizzes_total}</p>
+                                <p className="text-sm text-amber-600">
+                                  Điểm TB {student.average_quiz_score ?? 'Chưa có'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>

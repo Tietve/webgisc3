@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import lessonService from '@services/lesson.service'
 import gisService from '@services/gis.service'
@@ -11,6 +11,8 @@ import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureBounds, getFeatureDi
 const LessonViewerPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const classroomId = searchParams.get('classroomId')
   const mapRef = useRef(null)
   const [lesson, setLesson] = useState(null)
   const [currentStep, setCurrentStep] = useState(0)
@@ -19,13 +21,25 @@ const LessonViewerPage = () => {
   const [mapReady, setMapReady] = useState(false)
   const [isAiOpen, setIsAiOpen] = useState(false)
   const [selectedFeature, setSelectedFeature] = useState(null)
+  const progressHydratedRef = useRef(false)
+  const userInteractedRef = useRef(false)
 
   // Track which layers are currently active on the map
   const activeLayers = useRef(new Set())
 
   useEffect(() => {
+    progressHydratedRef.current = false
+    userInteractedRef.current = false
     loadLesson()
   }, [id])
+
+  useEffect(() => {
+    if (!lesson || !classroomId) {
+      return
+    }
+
+    loadLessonProgress()
+  }, [lesson, classroomId])
 
   // Execute map action when step changes or map becomes ready
   useEffect(() => {
@@ -44,6 +58,42 @@ const LessonViewerPage = () => {
       setError(err.message || 'Không thể tải bài học')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadLessonProgress = async () => {
+    try {
+      const progress = await lessonService.getProgress(id, classroomId)
+      if (!progressHydratedRef.current && !userInteractedRef.current && typeof progress?.current_step === 'number' && lesson?.steps?.length) {
+        const maxStep = Math.max(lesson.steps.length - 1, 0)
+        setCurrentStep(Math.min(progress.current_step, maxStep))
+        progressHydratedRef.current = true
+      }
+      if (progress?.status === 'not_started') {
+        persistProgress(0)
+      }
+    } catch (err) {
+      console.error('Khong tai duoc tien trinh bai hoc:', err)
+    }
+  }
+
+  const persistProgress = async (stepIndex, status = 'in_progress') => {
+    if (!classroomId || !lesson?.steps?.length) {
+      return
+    }
+
+    const safeStep = Math.max(0, Math.min(stepIndex, lesson.steps.length - 1))
+    const progressPercent = Number((((safeStep + 1) / lesson.steps.length) * 100).toFixed(2))
+
+    try {
+      await lessonService.saveProgress(id, {
+        classroom_id: Number(classroomId),
+        current_step: safeStep,
+        progress_percent: progressPercent,
+        status,
+      })
+    } catch (err) {
+      console.error('Khong luu duoc tien trinh bai hoc:', err)
     }
   }
 
@@ -195,19 +245,26 @@ const LessonViewerPage = () => {
 
   const nextStep = () => {
     if (lesson && currentStep < lesson.steps.length - 1) {
-      setCurrentStep(currentStep + 1)
+      userInteractedRef.current = true
+      const next = currentStep + 1
+      setCurrentStep(next)
+      persistProgress(next)
     }
   }
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
+      userInteractedRef.current = true
+      const prev = currentStep - 1
+      setCurrentStep(prev)
+      persistProgress(prev)
     }
   }
 
-  const finishLesson = () => {
+  const finishLesson = async () => {
+    await persistProgress(currentStep, 'completed')
     if (lesson?.quiz_id) {
-      navigate(`/quiz/${lesson.quiz_id}`)
+      navigate(`/quiz/${lesson.quiz_id}${classroomId ? `?classroomId=${classroomId}` : ''}`)
       return
     }
     navigate('/grade-10')

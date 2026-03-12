@@ -3,6 +3,7 @@ Serializers for interactive lesson system.
 """
 from rest_framework import serializers
 from apps.gis_data.serializers import MapLayerSerializer
+from apps.classrooms.models import LessonProgress
 from .models import Lesson, LessonStep, MapAction
 
 
@@ -80,3 +81,17 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     def get_quiz_id(self, obj):
         quiz = obj.quizzes.filter(is_published=True, module_code__in=CURATED_MODULE_CODES).order_by('id').first()
         return quiz.id if quiz else None
+
+
+class LessonProgressDetailSerializer(serializers.ModelSerializer):
+    """Read serializer for lesson progress."""
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+
+    class Meta:
+        model = LessonProgress
+        fields = (
+            'id', 'classroom', 'lesson', 'lesson_title', 'student',
+            'current_step', 'progress_percent', 'status', 'started_at',
+            'last_viewed_at', 'completed_at'
+        )
+        read_only_fields = fields

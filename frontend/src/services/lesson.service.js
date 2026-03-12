@@ -11,6 +11,18 @@ const lessonService = {
     const response = await api.get(ENDPOINTS.LESSONS.DETAIL(id))
     return response.data
   },
+
+  async getProgress(id, classroomId) {
+    const response = await api.get(ENDPOINTS.LESSONS.PROGRESS(id), {
+      params: { classroom_id: classroomId },
+    })
+    return response.data
+  },
+
+  async saveProgress(id, payload) {
+    const response = await api.post(ENDPOINTS.LESSONS.PROGRESS(id), payload)
+    return response.data
+  },
 }
 
 export default lessonService

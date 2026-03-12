@@ -27,6 +27,7 @@ export const ENDPOINTS = {
     CREATE: '/classrooms/',
     DETAIL: (id) => `/classrooms/${id}/`,
     STUDENTS: (id) => `/classrooms/${id}/students/`,
+    STUDENTS_PROGRESS: (id) => `/classrooms/${id}/students-progress/`,
     ENROLL: '/classrooms/enrollments/join/',
   },
 
@@ -34,6 +35,7 @@ export const ENDPOINTS = {
   LESSONS: {
     LIST: '/lessons/',
     DETAIL: (id) => `/lessons/${id}/`,
+    PROGRESS: (id) => `/lessons/${id}/progress/`,
   },
 
   // Quizzes
