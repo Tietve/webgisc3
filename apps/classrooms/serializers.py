@@ -4,7 +4,45 @@ Serializers for classroom and enrollment management.
 from rest_framework import serializers
 from django.utils import timezone
 from apps.users.serializers import UserSerializer
+from apps.lessons.models import Lesson
+from apps.quizzes.models import Quiz
 from .models import Classroom, Enrollment, Announcement, Assignment, Submission, Grade
+
+
+CURATED_MODULE_CODES = {'module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06'}
+
+
+def resolve_assignment_resource(assignment):
+    if assignment.resource_type == 'lesson' and assignment.resource_id:
+        return Lesson.objects.filter(
+            id=assignment.resource_id,
+            is_published=True,
+            grade_level=assignment.classroom.grade_level,
+            semester=assignment.classroom.semester,
+            textbook_series=assignment.classroom.textbook_series,
+            module_code__in=CURATED_MODULE_CODES,
+        ).first()
+    if assignment.resource_type == 'quiz' and assignment.resource_id:
+        return Quiz.objects.filter(
+            id=assignment.resource_id,
+            is_published=True,
+            grade_level=assignment.classroom.grade_level,
+            semester=assignment.classroom.semester,
+            textbook_series=assignment.classroom.textbook_series,
+            module_code__in=CURATED_MODULE_CODES,
+        ).first()
+    return None
+
+
+def build_assignment_launch_url(assignment):
+    resource = resolve_assignment_resource(assignment)
+    if not resource:
+        return None
+    if assignment.resource_type == 'lesson':
+        return f'/lessons/{resource.id}'
+    if assignment.resource_type == 'quiz':
+        return f'/quiz/{resource.id}'
+    return None
 
 
 class ClassroomSerializer(serializers.ModelSerializer):
@@ -149,14 +187,16 @@ class AssignmentSerializer(serializers.ModelSerializer):
     submission_status = serializers.SerializerMethodField()
     is_overdue = serializers.ReadOnlyField()
     attachment_url = serializers.SerializerMethodField()
+    linked_resource_available = serializers.SerializerMethodField()
+    launch_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Assignment
         fields = (
             'id', 'classroom', 'title', 'description', 'due_date', 'max_score',
             'attachment', 'attachment_url', 'created_by', 'teacher_email',
-            'resource_type', 'resource_id', 'submission_count', 'total_students',
-            'submission_status', 'is_overdue', 'created_at', 'updated_at'
+            'resource_type', 'resource_id', 'linked_resource_available', 'launch_url',
+            'submission_count', 'total_students', 'submission_status', 'is_overdue', 'created_at', 'updated_at'
         )
         read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
 
@@ -194,6 +234,13 @@ class AssignmentSerializer(serializers.ModelSerializer):
         return None
 
 
+    def get_linked_resource_available(self, obj):
+        return resolve_assignment_resource(obj) is not None
+
+    def get_launch_url(self, obj):
+        return build_assignment_launch_url(obj)
+
+
 class AssignmentCreateSerializer(serializers.ModelSerializer):
     """
     Serializer for creating assignments.
@@ -218,6 +265,42 @@ class AssignmentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Max score must be greater than 0.")
         return value
 
+    def validate(self, attrs):
+        classroom = Classroom.objects.get(id=self.context['classroom_id'])
+        resource_type = attrs.get('resource_type')
+        resource_id = attrs.get('resource_id')
+
+        if bool(resource_type) != bool(resource_id):
+            raise serializers.ValidationError('resource_type v? resource_id ph?i ?i c?ng nhau.')
+
+        if resource_type and resource_type not in {'lesson', 'quiz'}:
+            raise serializers.ValidationError('resource_type ch? nh?n lesson ho?c quiz.')
+
+        if resource_type == 'lesson':
+            lesson = Lesson.objects.filter(
+                id=resource_id,
+                is_published=True,
+                grade_level=classroom.grade_level,
+                semester=classroom.semester,
+                textbook_series=classroom.textbook_series,
+                module_code__in=CURATED_MODULE_CODES,
+            ).first()
+            if not lesson:
+                raise serializers.ValidationError('Lesson li?n k?t kh?ng h?p l? cho classroom n?y.')
+        elif resource_type == 'quiz':
+            quiz = Quiz.objects.filter(
+                id=resource_id,
+                is_published=True,
+                grade_level=classroom.grade_level,
+                semester=classroom.semester,
+                textbook_series=classroom.textbook_series,
+                module_code__in=CURATED_MODULE_CODES,
+            ).first()
+            if not quiz:
+                raise serializers.ValidationError('Quiz li?n k?t kh?ng h?p l? cho classroom n?y.')
+
+        return attrs
+
     def create(self, validated_data):
         """Create assignment with classroom and created_by from context."""
         validated_data['classroom_id'] = self.context['classroom_id']
@@ -234,13 +317,15 @@ class AssignmentListSerializer(serializers.ModelSerializer):
     total_students = serializers.SerializerMethodField()
     submission_status = serializers.SerializerMethodField()
     is_overdue = serializers.ReadOnlyField()
+    linked_resource_available = serializers.SerializerMethodField()
+    launch_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Assignment
         fields = (
             'id', 'title', 'due_date', 'max_score', 'teacher_email',
-            'resource_type', 'resource_id', 'submission_count', 'total_students',
-            'submission_status', 'is_overdue', 'created_at'
+            'resource_type', 'resource_id', 'linked_resource_available', 'launch_url',
+            'submission_count', 'total_students', 'submission_status', 'is_overdue', 'created_at'
         )
         read_only_fields = fields
 

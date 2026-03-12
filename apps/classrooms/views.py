@@ -56,16 +56,25 @@ class ClassroomViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         # Get classrooms where user is the teacher/owner
-        owned_classrooms = Classroom.objects.filter(teacher=user)
+        owned_classrooms = Classroom.objects.filter(teacher=user, is_published=True)
 
         # Get classrooms where user is enrolled as a student/member
         enrolled_classroom_ids = Enrollment.objects.filter(
             student=user
         ).values_list('classroom_id', flat=True)
-        enrolled_classrooms = Classroom.objects.filter(id__in=enrolled_classroom_ids)
+        enrolled_classrooms = Classroom.objects.filter(id__in=enrolled_classroom_ids, is_published=True)
 
-        # Combine both (use union to avoid duplicates)
-        return (owned_classrooms | enrolled_classrooms).distinct()
+        queryset = (owned_classrooms | enrolled_classrooms).distinct()
+        params = self.request.query_params
+        if params.get('grade_level'):
+            queryset = queryset.filter(grade_level=params['grade_level'])
+        if params.get('semester'):
+            queryset = queryset.filter(semester=params['semester'])
+        if params.get('textbook_series'):
+            queryset = queryset.filter(textbook_series=params['textbook_series'])
+        if params.get('module_code'):
+            queryset = queryset.filter(module_code=params['module_code'])
+        return queryset
 
     @extend_schema(
         summary="List classrooms",

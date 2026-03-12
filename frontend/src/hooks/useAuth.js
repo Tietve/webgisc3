@@ -1,61 +1,65 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '@services'
 import { authStorage } from '@utils'
 import { ROUTES } from '@constants'
 
-/**
- * Custom hook for authentication
- */
 export const useAuth = () => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const loadUser = () => {
-      const storedUser = authStorage.getUser()
-      if (storedUser) {
-        setUser(storedUser)
-      }
-      setLoading(false)
+  const hydrateUser = useCallback(async () => {
+    const storedUser = authStorage.getUser()
+    const token = authStorage.getToken()
+
+    if (storedUser) {
+      setUser(storedUser)
     }
 
-    loadUser()
+    if (!token) {
+      setLoading(false)
+      return
+    }
+
+    if (storedUser) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      const profile = await authService.getProfile()
+      setUser(profile)
+      authStorage.setUser(profile)
+    } catch (error) {
+      authService.logout()
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
-  /**
-   * Login user
-   */
+  useEffect(() => {
+    hydrateUser()
+  }, [hydrateUser])
+
   const login = async (email, password) => {
     try {
-      // Call login API
       const data = await authService.login(email, password)
-
-      // Store token
       authStorage.setToken(data.access)
-
-      // Fetch and store user profile
       const userProfile = await authService.getProfile()
       setUser(userProfile)
       authStorage.setUser(userProfile)
-
-      // Navigate to dashboard
       navigate(ROUTES.DASHBOARD)
-
       return { success: true }
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Đăng nhập thất bại',
+        error: error.response?.data?.detail || '??ng nh?p th?t b?i',
       }
     }
   }
 
-  /**
-   * Register new user
-   */
   const register = async (userData) => {
     try {
       await authService.register(userData)
@@ -63,33 +67,19 @@ export const useAuth = () => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Đăng ký thất bại',
+        error: error.response?.data?.detail || '??ng k? th?t b?i',
       }
     }
   }
 
-  /**
-   * Logout user
-   */
   const logout = () => {
     authService.logout()
     setUser(null)
     navigate(ROUTES.LOGIN)
   }
 
-  /**
-   * Check if user is authenticated
-   */
-  const isAuthenticated = () => {
-    return !!user && !!authStorage.getToken()
-  }
-
-  /**
-   * Check if user has specific role
-   */
-  const hasRole = (role) => {
-    return user?.role === role
-  }
+  const isAuthenticated = () => !!authStorage.getToken() && !!user
+  const hasRole = (role) => user?.role === role
 
   return {
     user,
@@ -99,5 +89,6 @@ export const useAuth = () => {
     logout,
     isAuthenticated,
     hasRole,
+    refreshUser: hydrateUser,
   }
 }

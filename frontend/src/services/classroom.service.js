@@ -10,8 +10,8 @@ const classroomService = {
    * Get list of classrooms
    * @returns {Promise} Classrooms list
    */
-  async list() {
-    const response = await api.get(ENDPOINTS.CLASSROOMS.LIST)
+  async list(filters = {}) {
+    const response = await api.get(ENDPOINTS.CLASSROOMS.LIST, { params: filters })
     return response.data
   },
 

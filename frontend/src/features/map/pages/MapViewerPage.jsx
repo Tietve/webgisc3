@@ -11,9 +11,11 @@ import LessonsPanel from '@components/map/LessonsPanel'
 import QuizFloatingButton from '@components/map/QuizFloatingButton'
 import QuizPanel from '@components/map/QuizPanel'
 import DeadlineWidget from '@components/map/DeadlineWidget'
+import AITutorPanel from '@components/ai/AITutorPanel'
 import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
 import quizService from '@services/quiz.service'
+import lessonService from '@services/lesson.service'
 
 const MapViewerPage = () => {
   const { user, logout } = useAuth()
@@ -25,8 +27,12 @@ const MapViewerPage = () => {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [is3DMode, setIs3DMode] = useState(false)
   const [layers, setLayers] = useState([])
+  const [moduleLessons, setModuleLessons] = useState([])
   const [enabledLayers, setEnabledLayers] = useState(new Set())
   const [activeQuizId, setActiveQuizId] = useState(searchParams.get('quiz'))
+  const [hasAutoEnabledLayers, setHasAutoEnabledLayers] = useState(false)
+  const [selectedFeature, setSelectedFeature] = useState(null)
+  const [quizQuestionContext, setQuizQuestionContext] = useState([])
 
   // Store loaded GeoJSON data so layers can be re-added after style changes
   const loadedGeoJSONRef = useRef({})
@@ -50,22 +56,39 @@ const MapViewerPage = () => {
   useEffect(() => {
     if (!isStudentView) return
 
-    const loadQuiz = async () => {
+    const loadStudentContext = async () => {
       try {
-        const response = await quizService.list(lessonFilters)
-        const quizzes = response.results || response || []
-        if (quizzes.length > 0) {
+        const [quizResponse, lessonResponse] = await Promise.all([
+          quizService.list(lessonFilters),
+          lessonService.list(lessonFilters),
+        ])
+        const quizzes = quizResponse.results || quizResponse || []
+        const lessons = lessonResponse.results || lessonResponse || []
+        setModuleLessons(lessons)
+        if (!searchParams.get('quiz') && quizzes.length > 0) {
           setActiveQuizId(quizzes[0].id)
         }
       } catch (error) {
-        console.error('Failed to load student quiz:', error)
+        console.error('Failed to load student context:', error)
       }
     }
 
-    if (!searchParams.get('quiz')) {
-      loadQuiz()
-    }
+    loadStudentContext()
   }, [isStudentView, lessonFilters, searchParams])
+
+  const curatedLayerIds = useMemo(() => {
+    const ids = new Set()
+    moduleLessons.forEach((lesson) => {
+      ;(lesson.layers || []).forEach((layer) => ids.add(layer.id))
+    })
+    return ids
+  }, [moduleLessons])
+
+  useEffect(() => {
+    if (!isStudentView || curatedLayerIds.size === 0) return
+    setLayers((current) => current.filter((layer) => curatedLayerIds.has(layer.id)))
+    setHasAutoEnabledLayers(false)
+  }, [isStudentView, curatedLayerIds])
 
   const togglePanel = (panel) => {
     setActivePanel(activePanel === panel ? null : panel)
@@ -105,8 +128,11 @@ const MapViewerPage = () => {
     try {
       const response = await gisService.listLayers(layerFilters)
       const layersData = response.results || response || []
-      setLayers(layersData)
-      console.log('Loaded layers:', layersData)
+      const filteredLayers = isStudentView && curatedLayerIds.size > 0
+        ? layersData.filter((layer) => curatedLayerIds.has(layer.id))
+        : layersData
+      setLayers(filteredLayers)
+      console.log('Loaded layers:', filteredLayers)
     } catch (error) {
       console.error('Failed to load layers:', error)
     }
@@ -137,6 +163,7 @@ const MapViewerPage = () => {
       mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
         const coordinates = feature.geometry.coordinates.slice()
         const properties = feature.properties
+        setSelectedFeature({ layer_id: layerId, geometry_type: geomType, properties })
 
         let popupHTML = `
           <div style="font-family: system-ui, sans-serif; max-width: 240px;">
@@ -175,6 +202,7 @@ const MapViewerPage = () => {
       mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
         const coordinates = feature.geometry.coordinates[0]
         const properties = feature.properties
+        setSelectedFeature({ layer_id: layerId, geometry_type: geomType, properties })
 
         let popupHTML = `
           <div style="font-family: system-ui, sans-serif; max-width: 240px;">
@@ -222,6 +250,7 @@ const MapViewerPage = () => {
       mapRef.current.addClickHandler(`layer-${layerId}-fill`, (feature) => {
         const coordinates = feature.geometry.coordinates[0][0]
         const properties = feature.properties
+        setSelectedFeature({ layer_id: layerId, geometry_type: geomType, properties })
 
         let popupHTML = `
           <div style="font-family: system-ui, sans-serif; max-width: 240px;">
@@ -286,6 +315,49 @@ const MapViewerPage = () => {
 
     setEnabledLayers(newEnabledLayers)
   }
+
+  const getMapState = () => {
+    const map = mapRef.current?.getMap?.()
+    if (!map) return null
+
+    const center = map.getCenter()
+    return {
+      center: [Number(center.lng.toFixed(6)), Number(center.lat.toFixed(6))],
+      zoom: Number(map.getZoom().toFixed(2)),
+      pitch: Number(map.getPitch().toFixed(2)),
+      bearing: Number(map.getBearing().toFixed(2)),
+    }
+  }
+
+  const aiContext = {
+    lesson_id: searchParams.get('lesson') ? Number(searchParams.get('lesson')) : undefined,
+    quiz_id: activeQuizId ? Number(activeQuizId) : undefined,
+    classroom_id: searchParams.get('classroom') ? Number(searchParams.get('classroom')) : undefined,
+    lesson_step: undefined,
+    active_layers: Array.from(enabledLayers),
+    selected_feature: selectedFeature || undefined,
+    map_state: getMapState(),
+    question_context: quizQuestionContext,
+    grade_level: searchParams.get('grade') || '10',
+    semester: searchParams.get('semester') || '1',
+    textbook_series: searchParams.get('textbook') || 'canh-dieu',
+    module_code: searchParams.get('module') || '',
+  }
+
+
+  useEffect(() => {
+    if (!isStudentView || hasAutoEnabledLayers || layers.length === 0) return
+
+    const autoEnable = async () => {
+      for (const layer of layers.slice(0, 4)) {
+        // eslint-disable-next-line no-await-in-loop
+        await toggleLayer(layer.id, true)
+      }
+      setHasAutoEnabledLayers(true)
+    }
+
+    autoEnable().catch((error) => console.error('Failed to auto-enable student layers:', error))
+  }, [isStudentView, hasAutoEnabledLayers, layers])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900">
@@ -364,6 +436,14 @@ const MapViewerPage = () => {
             }}
           />
         )}
+        {activePanel === 'ai' && (
+          <AITutorPanel
+            isOpen={true}
+            onClose={() => setActivePanel(null)}
+            context={aiContext}
+            title="AI Tutor Địa lí 10"
+          />
+        )}
 
         {/* Quiz Floating Button */}
         <QuizFloatingButton
@@ -376,6 +456,12 @@ const MapViewerPage = () => {
           isOpen={isQuizOpen}
           onClose={() => setIsQuizOpen(false)}
           quizId={activeQuizId}
+          onQuizSubmitted={(payload) => {
+            setQuizQuestionContext(payload.question_results || [])
+          }}
+          onAskAi={() => {
+            setActivePanel('ai')
+          }}
         />
       </div>
     </div>

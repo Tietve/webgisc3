@@ -6,6 +6,9 @@ from apps.gis_data.serializers import MapLayerSerializer
 from .models import Lesson, LessonStep, MapAction
 
 
+CURATED_MODULE_CODES = {'module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06'}
+
+
 class MapActionSerializer(serializers.ModelSerializer):
     """
     Serializer for MapAction model.
@@ -50,7 +53,7 @@ class LessonListSerializer(serializers.ModelSerializer):
         return obj.steps.count()
 
     def get_quiz_id(self, obj):
-        quiz = obj.quizzes.filter(is_published=True).order_by('id').first()
+        quiz = obj.quizzes.filter(is_published=True, module_code__in=CURATED_MODULE_CODES).order_by('id').first()
         return quiz.id if quiz else None
 
 
@@ -75,5 +78,5 @@ class LessonDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_quiz_id(self, obj):
-        quiz = obj.quizzes.filter(is_published=True).order_by('id').first()
+        quiz = obj.quizzes.filter(is_published=True, module_code__in=CURATED_MODULE_CODES).order_by('id').first()
         return quiz.id if quiz else None

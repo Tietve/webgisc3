@@ -81,13 +81,8 @@ const ClassroomDetailPage = () => {
       const assignment = await assignmentService.get(id, assignmentId)
       setSelectedAssignment(assignment)
 
-      if (!isOwner && assignment.resource_type === 'lesson' && assignment.resource_id) {
-        navigate(`/lessons/${assignment.resource_id}`)
-        return
-      }
-
-      if (!isOwner && assignment.resource_type === 'quiz' && assignment.resource_id) {
-        navigate(`/quiz/${assignment.resource_id}`)
+      if (!isOwner && assignment.launch_url) {
+        navigate(assignment.launch_url)
         return
       }
 

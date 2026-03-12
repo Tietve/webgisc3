@@ -10,6 +10,15 @@ from django.db import connection
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from apps.core.pagination import LargeResultsSetPagination
 from .models import MapLayer, VietnamProvince
+
+
+SUPPORTED_CUSTOM_TABLES = {
+    'points_of_interest',
+    'line_features',
+    'polygon_features',
+    'boundaries',
+    'routes',
+}
 from .serializers import MapLayerSerializer, VietnamProvinceGeoSerializer
 
 
@@ -100,17 +109,16 @@ class MapLayerViewSet(viewsets.ReadOnlyModelViewSet):
                             json_build_object(
                                 'type', 'Feature',
                                 'id', id,
-                                'properties', json_build_object(
-                                    'id', id,
-                                    'name', name,
-                                    'category', COALESCE(category, 'Unknown')
-                                ),
+                                'properties', to_jsonb(src) - 'geometry',
                                 'geometry', ST_AsGeoJSON(geometry)::json
                             )
                         ), '[]'::json)
                     ) as geojson
-                    FROM {table_name}
-                    WHERE {where_clause};
+                    FROM (
+                        SELECT *
+                        FROM {table_name}
+                        WHERE {where_clause}
+                    ) AS src;
                 """
 
                 try:

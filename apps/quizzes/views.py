@@ -12,6 +12,10 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParamet
 from apps.core.permissions import IsStudent, IsTeacher
 from apps.classrooms.models import Assignment, Classroom, Enrollment, Submission
 from .models import Quiz, QuizSubmission
+CURATED_MODULE_CODES = [
+    'module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06'
+]
+
 from .serializers import (
     QuizListSerializer,
     QuizDetailSerializer,
@@ -47,6 +51,8 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(textbook_series=params['textbook_series'])
         if params.get('module_code'):
             queryset = queryset.filter(module_code=params['module_code'])
+        elif params.get('grade_level') == '10' and params.get('semester') == '1' and params.get('textbook_series') == 'canh-dieu':
+            queryset = queryset.filter(module_code__in=CURATED_MODULE_CODES)
         if params.get('lesson_id'):
             queryset = queryset.filter(lesson_id=params['lesson_id'])
 
@@ -217,12 +223,29 @@ class QuizSubmissionView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         submission = serializer.save()
 
+        question_results = []
+        questions = submission.quiz.questions.prefetch_related('answers').all()
+        for question in questions:
+            selected_answer_id = submission.answers.get(str(question.id))
+            selected_answer = next((answer for answer in question.answers.all() if str(answer.id) == str(selected_answer_id)), None)
+            correct_answer = next((answer for answer in question.answers.all() if answer.is_correct), None)
+            question_results.append({
+                'question_id': question.id,
+                'question_text': question.question_text,
+                'selected_answer_id': selected_answer.id if selected_answer else None,
+                'selected_answer_text': selected_answer.answer_text if selected_answer else None,
+                'correct_answer_id': correct_answer.id if correct_answer else None,
+                'correct_answer_text': correct_answer.answer_text if correct_answer else None,
+                'is_correct': bool(selected_answer and selected_answer.is_correct),
+            })
+
         # Return submission details
         response_data = {
             'submission_id': submission.id,
             'score': submission.score,
             'quiz_title': submission.quiz.title,
-            'submitted_at': submission.submitted_at
+            'submitted_at': submission.submitted_at,
+            'question_results': question_results,
         }
 
         return Response(response_data, status=status.HTTP_201_CREATED)

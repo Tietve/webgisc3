@@ -6,6 +6,13 @@ from django.utils import timezone
 from .models import Quiz, QuizQuestion, QuizAnswer, QuizSubmission
 
 
+CURATED_MODULE_CODES = {'module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06'}
+
+
+def get_curated_quiz_queryset():
+    return Quiz.objects.filter(is_published=True, module_code__in=CURATED_MODULE_CODES)
+
+
 class QuizAnswerSerializer(serializers.ModelSerializer):
     """
     Serializer for quiz answers.
@@ -105,10 +112,8 @@ class QuizSubmissionCreateSerializer(serializers.Serializer):
     )
 
     def validate_quiz_id(self, value):
-        """Validate that the quiz exists."""
-        try:
-            Quiz.objects.get(id=value)
-        except Quiz.DoesNotExist:
+        """Validate that the quiz exists and is curated."""
+        if not get_curated_quiz_queryset().filter(id=value).exists():
             raise serializers.ValidationError("Quiz not found.")
         return value
 
@@ -118,7 +123,7 @@ class QuizSubmissionCreateSerializer(serializers.Serializer):
         answers = attrs['answers']
 
         # Get all questions for this quiz
-        quiz = Quiz.objects.get(id=quiz_id)
+        quiz = get_curated_quiz_queryset().get(id=quiz_id)
         questions = quiz.questions.all()
 
         # Check that all questions are answered
@@ -151,7 +156,7 @@ class QuizSubmissionCreateSerializer(serializers.Serializer):
         answers = validated_data['answers']
         student = self.context['request'].user
 
-        quiz = Quiz.objects.get(id=quiz_id)
+        quiz = get_curated_quiz_queryset().get(id=quiz_id)
 
         # Calculate score
         total_questions = quiz.questions.count()

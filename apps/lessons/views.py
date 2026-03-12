@@ -8,6 +8,11 @@ from .models import Lesson
 from .serializers import LessonListSerializer, LessonDetailSerializer
 
 
+CURATED_MODULE_CODES = [
+    'module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06'
+]
+
+
 class LessonViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for retrieving interactive lessons.
@@ -32,6 +37,8 @@ class LessonViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(textbook_series=params['textbook_series'])
         if params.get('module_code'):
             queryset = queryset.filter(module_code=params['module_code'])
+        elif params.get('grade_level') == '10' and params.get('semester') == '1' and params.get('textbook_series') == 'canh-dieu':
+            queryset = queryset.filter(module_code__in=CURATED_MODULE_CODES)
         if params.get('lesson_type'):
             queryset = queryset.filter(lesson_type=params['lesson_type'])
 
