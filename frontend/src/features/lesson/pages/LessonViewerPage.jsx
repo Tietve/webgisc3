@@ -41,7 +41,7 @@ const LessonViewerPage = () => {
       const data = await lessonService.get(id)
       setLesson(data)
     } catch (err) {
-      setError(err.message || 'Kh\u00f4ng th\u1ec3 t\u1ea3i b\u00e0i h\u1ecdc')
+      setError(err.message || 'Không thể tải bài học')
     } finally {
       setLoading(false)
     }
@@ -135,9 +135,8 @@ const LessonViewerPage = () => {
     if (!mapAction || !mapRef.current) return
 
     const { payload = {} } = mapAction
-    const layerCollections = []
+    const boundsToMerge = []
 
-    // Handle layers_off
     if (payload.layers_off === 'all') {
       activeLayers.current.forEach((lid) => removeLayerFromMap(lid))
       activeLayers.current.clear()
@@ -148,19 +147,17 @@ const LessonViewerPage = () => {
       })
     }
 
-    // Handle layers_on
     if (Array.isArray(payload.layers_on)) {
       for (const lid of payload.layers_on) {
         try {
           const featuresData = await gisService.getFeatures(lid)
           if (featuresData?.features?.length) {
-            layerCollections.push(featuresData)
-
             if (!activeLayers.current.has(lid)) {
-              addLayerToMap(lid, featuresData)
+              addLayerToMap(lid, featuresData, { fitBounds: false })
+              activeLayers.current.add(lid)
             }
-
-            activeLayers.current.add(lid)
+            const bounds = getFeatureBounds(featuresData)
+            if (bounds) boundsToMerge.push(bounds)
           }
         } catch (err) {
           console.error(`Failed to load layer ${lid}:`, err)
@@ -168,18 +165,20 @@ const LessonViewerPage = () => {
       }
     }
 
-    if (payload.fit_to_layers && layerCollections.length > 0) {
-      const mergedCollection = {
-        type: 'FeatureCollection',
-        features: layerCollections.flatMap((collection) => collection.features || []),
-      }
-      const bounds = getFeatureBounds(mergedCollection)
-      if (bounds) {
-        mapRef.current.fitBounds(bounds, { padding: 72, maxZoom: payload.zoom ?? 7 })
+    if (payload.fit_to_layers && boundsToMerge.length > 0) {
+      const merged = boundsToMerge.reduce((acc, bounds) => {
+        if (!acc) return [...bounds]
+        return [
+          [Math.min(acc[0][0], bounds[0][0]), Math.min(acc[0][1], bounds[0][1])],
+          [Math.max(acc[1][0], bounds[1][0]), Math.max(acc[1][1], bounds[1][1])],
+        ]
+      }, null)
+
+      if (merged) {
+        mapRef.current.fitBounds(merged, { padding: 72, maxZoom: payload.max_zoom ?? 7 })
       }
     }
 
-    // Handle flyTo
     if (mapAction.action_type === 'flyTo' && payload.center && !payload.fit_to_layers) {
       const map = mapRef.current.getMap()
       if (map) {
@@ -188,7 +187,7 @@ const LessonViewerPage = () => {
           zoom: payload.zoom ?? 2,
           pitch: payload.pitch ?? 0,
           bearing: payload.bearing ?? 0,
-          duration: 2000
+          duration: 2000,
         })
       }
     }
@@ -214,51 +213,47 @@ const LessonViewerPage = () => {
     navigate('/grade-10')
   }
 
-  // --- Loading state ---
+  const formatMarkdown = (text) => {
+    if (!text) return ''
+    return text
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+      .replace(/\n\n/gim, '</p><p>')
+      .replace(/\n/gim, '<br/>')
+      .replace(/^/, '<p>')
+      .replace(/$/, '</p>')
+  }
+
   if (loading) {
     return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-slate-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-300">{'\u0110ang t\u1ea3i b\u00e0i h\u1ecdc...'}</p>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <p className="mt-4 text-slate-600">Đang tải bài học...</p>
         </div>
       </div>
     )
   }
 
-  // --- Error state ---
-  if (error) {
+  if (error || !lesson) {
     return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-md text-center">
-          <div className="text-red-400 text-4xl mb-4">!</div>
-          <h2 className="text-xl font-bold text-white mb-2">{'L\u1ed7i'}</h2>
-          <p className="text-gray-300 mb-6">{error}</p>
+      <div className="flex h-screen items-center justify-center bg-slate-100 px-4">
+        <div className="w-full max-w-md rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+            <svg className="h-7 w-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-xl font-semibold text-slate-900">Không thể mở bài học</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{error || 'Bài học không tồn tại hoặc chưa được xuất bản.'}</p>
           <button
-            onClick={() => navigate('/map')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            onClick={() => navigate('/grade-10')}
+            className="mt-5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
-            {'Quay l\u1ea1i b\u1ea3n \u0111\u1ed3'}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // --- Empty lesson ---
-  if (!lesson || !lesson.steps || lesson.steps.length === 0) {
-    return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-md text-center">
-          <h2 className="text-xl font-bold text-white mb-2">{'B\u00e0i h\u1ecdc ch\u01b0a c\u00f3 n\u1ed9i dung'}</h2>
-          <p className="text-gray-300 mb-6">
-            {'B\u00e0i h\u1ecdc n\u00e0y ch\u01b0a \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt n\u1ed9i dung. Vui l\u00f2ng ch\u1ecdn b\u00e0i h\u1ecdc kh\u00e1c.'}
-          </p>
-          <button
-            onClick={() => navigate('/map')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            {'Quay l\u1ea1i b\u1ea3n \u0111\u1ed3'}
+            Quay lại grade 10
           </button>
         </div>
       </div>
@@ -308,97 +303,104 @@ const LessonViewerPage = () => {
           <button
             onClick={() => navigate('/grade-10')}
             className="shrink-0 rounded-lg p-1.5 transition hover:bg-slate-100"
-            title={'Quay l\u1ea1i'}
+            title={'Quay lại'}
           >
             <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <h1 className="text-sm font-semibold text-slate-900 truncate">{lesson.title}</h1>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">{lesson.module_code?.replace('-', ' ').toUpperCase()}</p>
+            <h1 className="truncate text-lg font-bold text-slate-900">{lesson.title}</h1>
+          </div>
         </div>
-        <div className="ml-3 shrink-0 text-xs text-slate-500">
-          {'B\u01b0\u1edbc'} {currentStep + 1}/{lesson.steps.length}
+
+        <div className="flex items-center gap-3">
+          {lesson.quiz_id && (
+            <button
+              onClick={() => navigate(`/quiz/${lesson.quiz_id}`)}
+              className="hidden rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 md:inline-flex"
+            >
+              Mở quiz
+            </button>
+          )}
+          {isAiSupported && (
+            <button
+              onClick={() => setIsAiOpen((current) => !current)}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                isAiOpen ? 'bg-violet-600 text-white hover:bg-violet-700' : 'border border-violet-200 bg-white text-violet-700 hover:bg-violet-50'
+              }`}
+            >
+              <span>✨</span>
+              {isAiOpen ? 'Ẩn AI Tutor' : 'Hỏi AI Tutor'}
+            </button>
+          )}
         </div>
-        <button
-          onClick={() => isAiSupported && setIsAiOpen(true)}
-          disabled={!isAiSupported}
-          className={`ml-3 px-3 py-1.5 text-xs font-semibold rounded-full transition ${
-            isAiSupported ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm' : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-          }`}
-        >
-          AI Tutor
-        </button>
       </div>
 
-      {/* Main split-screen */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* Map panel (left / top on mobile) */}
-        <div className="lg:w-[65%] w-full h-[45vh] lg:h-full relative shrink-0">
-          {selectedFeature && (
-            <div className="absolute left-4 top-4 z-10 w-72 max-w-[calc(100%-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{'\u0110\u1ed1i t\u01b0\u1ee3ng \u0111ang ch\u1ecdn'}</p>
-                  <h3 className="mt-1 text-sm font-semibold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h3>
-                  <p className="mt-1 text-xs text-slate-500">{selectedFeature.layer_name || `Layer ${selectedFeature.layer_id}`}</p>
-                </div>
-                <button onClick={() => setSelectedFeature(null)} className="text-xs font-medium text-slate-500 hover:text-slate-700">{'\u0110\xf3ng'}</button>
-              </div>
-            </div>
-          )}
+      {/* Main layout */}
+      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+        {/* Map section */}
+        <div className="relative h-[45vh] lg:h-auto lg:flex-1">
           <MapboxMap
             ref={mapRef}
-            initialCenter={[105.8342, 21.0278]}
-            initialZoom={3}
+            initialCenter={lesson.module_center || [106, 16]}
+            initialZoom={lesson.module_zoom || 4}
             onMapLoad={handleMapLoad}
           />
+
+          {/* Step indicator */}
+          <div className="absolute top-4 left-4 z-10 rounded-2xl bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tiến độ</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">Bước {currentStep + 1} / {lesson.steps.length}</p>
+          </div>
+
+          {/* Selected feature info */}
+          {selectedFeature && (
+            <div className="absolute bottom-4 left-4 z-10 max-w-sm rounded-2xl bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Đối tượng đang xem</p>
+              <h3 className="mt-1 text-sm font-bold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-600">{selectedFeature.layer_name}</p>
+            </div>
+          )}
         </div>
 
-        {/* Content panel (right / bottom on mobile) */}
-        <div className="lg:w-[35%] w-full flex-1 lg:flex-none lg:h-full flex flex-col border-l border-slate-200 bg-gradient-to-b from-white to-slate-50">
-          {/* Scrollable step content */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Content section */}
+        <div className="w-full shrink-0 bg-white lg:w-[460px] xl:w-[520px] flex flex-col border-t lg:border-l lg:border-t-0 border-slate-200">
+          <div className="flex-1 overflow-y-auto px-5 py-5 md:px-6 md:py-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
+                exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.25 }}
-                className="p-5 md:p-6 space-y-4 text-slate-800"
+                className="space-y-5"
               >
-                <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 md:p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Bước {currentStep + 1}</p>
-                      <h2 className="mt-1 text-lg font-semibold text-slate-900">{lesson.lesson_type === 'practice' ? 'Thực hành với WebGIS' : 'Khám phá kiến thức cốt lõi'}</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Bước học hiện tại</p>
+                      <h2 className="mt-1 text-xl font-bold leading-tight text-slate-900">{step.title || `Bước ${currentStep + 1}`}</h2>
                     </div>
-                    <span className="rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-medium text-blue-700">
-                      {lesson.module_code}
-                    </span>
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm">
+                      {Math.round(progress)}%
+                    </div>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-700">{lesson.description}</p>
+                  {lesson.description && currentStep === 0 && (
+                    <p className="mt-3 text-sm leading-6 text-slate-700">{lesson.description}</p>
+                  )}
                 </div>
 
-                {moduleMeta && (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Mục tiêu học nhanh</p>
-                      <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                        {moduleMeta.learningGoals.map((goal) => (
-                          <li key={goal}>• {goal}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Khái niệm cốt lõi</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {moduleMeta.keyConcepts.map((concept) => (
-                          <span key={concept} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
-                            {concept}
-                          </span>
-                        ))}
-                      </div>
+                {moduleMeta?.keyConcepts?.length > 0 && currentStep === 0 && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Khái niệm cốt lõi</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {moduleMeta.keyConcepts.map((concept) => (
+                        <span key={concept} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
+                          {concept}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -502,7 +504,7 @@ const LessonViewerPage = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                {'Tr\u01b0\u1edbc'}
+                {'Trước'}
               </button>
 
               {isLastStep ? (
@@ -513,14 +515,14 @@ const LessonViewerPage = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  {'Ho\u00e0n th\u00e0nh'}
+                  {'Hoàn thành'}
                 </button>
               ) : (
                 <button
                   onClick={nextStep}
                   className="px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition flex items-center gap-1.5"
                 >
-                  {'Ti\u1ebfp theo'}
+                  {'Tiếp theo'}
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -535,89 +537,9 @@ const LessonViewerPage = () => {
         isOpen={isAiOpen}
         onClose={() => setIsAiOpen(false)}
         context={aiContext}
-        title={'AI Tutor theo b\u00e0i h\u1ecdc'}
       />
     </div>
   )
-}
-
-// Simple markdown formatter
-const formatMarkdown = (text) => {
-  if (!text) return ''
-
-  // Extract and preserve HTML img tags before processing
-  const imgPlaceholders = []
-  let processed = text.replace(/<img\s+[^>]*>/gi, (match) => {
-    const idx = imgPlaceholders.length
-    imgPlaceholders.push(
-      `<div class="my-4 text-center">${match.replace(/<img/, '<img style="max-width:100%;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:inline-block"')}</div>`
-    )
-    return `%%IMG_PLACEHOLDER_${idx}%%`
-  })
-
-  // Parse markdown tables before line-level replacements
-  processed = processed.replace(
-    /((?:^\|.+\|[ \t]*\n)+)/gm,
-    (tableBlock) => {
-      const rows = tableBlock.trim().split('\n').filter(r => r.trim())
-      if (rows.length < 2) return tableBlock
-
-      // Check if second row is separator
-      const isSeparator = /^\|[\s\-:|]+\|$/.test(rows[1].trim())
-      const dataStart = isSeparator ? 2 : 1
-
-      const parseRow = (row) =>
-        row.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim())
-
-      const headerCells = parseRow(rows[0])
-      let html = '<div class="my-4 overflow-x-auto"><table class="w-full border-collapse text-sm">'
-      html += '<thead><tr>'
-      headerCells.forEach(cell => {
-        html += `<th class="border border-gray-600 bg-gray-700 px-3 py-2 text-left text-gray-200 font-semibold">${cell}</th>`
-      })
-      html += '</tr></thead><tbody>'
-
-      for (let i = dataStart; i < rows.length; i++) {
-        const cells = parseRow(rows[i])
-        const rowBg = (i - dataStart) % 2 === 0 ? 'bg-gray-800/50' : 'bg-gray-800'
-        html += '<tr>'
-        cells.forEach(cell => {
-          html += `<td class="border border-gray-600 ${rowBg} px-3 py-2 text-gray-300">${cell}</td>`
-        })
-        html += '</tr>'
-      }
-      html += '</tbody></table></div>'
-      return html
-    }
-  )
-
-  processed = processed
-    // Images with caption: ![alt](url) followed by *caption*
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)\s*\n\*([^*]+)\*/g,
-      '<div class="my-4 text-center"><img src="$2" alt="$1" style="max-width:100%;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:inline-block" /><p class="text-sm text-gray-400 mt-2 italic">$3</p></div>')
-    // Images without explicit caption: ![alt](url) — use alt as caption
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
-      '<div class="my-4 text-center"><img src="$2" alt="$1" style="max-width:100%;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:inline-block" /><p class="text-sm text-gray-400 mt-2 italic">$1</p></div>')
-    // Blockquotes
-    .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-blue-500 bg-blue-900/20 p-3 my-3 italic text-gray-300">$1</blockquote>')
-    // Headers
-    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-6 mb-3">$1</h1>')
-    // Bold, italic
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-blue-400">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-    // Lists
-    .replace(/^- (.*$)/gim, '<li class="ml-6">$1</li>')
-    // Newlines
-    .replace(/\n/g, '<br>')
-
-  // Restore HTML img placeholders
-  imgPlaceholders.forEach((html, idx) => {
-    processed = processed.replace(`%%IMG_PLACEHOLDER_${idx}%%`, html)
-  })
-
-  return processed
 }
 
 export default LessonViewerPage

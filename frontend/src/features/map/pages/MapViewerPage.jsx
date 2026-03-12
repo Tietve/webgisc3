@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MAP_CONFIG, ROUTES } from '@constants'
-import { useAuth } from '@hooks'
-import MapboxMap from '@components/map/MapboxMap'
+import { useAuth } from '@hooks/useAuth'
+import { MAP_CONFIG } from '@constants/map.constants'
+import { ROUTES } from '@constants/routes.constants'
 import CollapsibleSidebar from '@components/layout/CollapsibleSidebar'
+import MapboxMap from '@components/map/MapboxMap'
 import MapTopToolbar from '@components/map/MapTopToolbar'
-import ToolsPanel from '@components/map/ToolsPanel'
 import LayersPanel from '@components/map/LayersPanel'
-import LessonsPanel from '@components/map/LessonsPanel'
-import QuizFloatingButton from '@components/map/QuizFloatingButton'
-import QuizPanel from '@components/map/QuizPanel'
-import DeadlineWidget from '@components/map/DeadlineWidget'
+import LessonsPanel from '@components/lesson/LessonsPanel'
+import QuizPanel from '@components/quiz/QuizPanel'
+import DetailPanel from '@components/common/DetailPanel'
+import DeadlineWidget from '@components/classroom/DeadlineWidget'
 import AITutorPanel from '@components/ai/AITutorPanel'
 import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
@@ -101,26 +101,28 @@ const MapViewerPage = () => {
     return selected
   }, [activeModuleCode, activeModuleMeta, layers])
 
-  useEffect(() => {
-    if (!isStudentView || curatedLayerIds.size === 0) return
-    setLayers((current) => current.filter((layer) => curatedLayerIds.has(layer.id)))
-    setHasAutoEnabledLayers(false)
-  }, [isStudentView, curatedLayerIds])
-
-  const togglePanel = (panel) => {
-    setActivePanel(activePanel === panel ? null : panel)
+  const togglePanel = (panelName) => {
+    if (panelName === '3d') {
+      toggle3D()
+    } else if (panelName === 'darkMode') {
+      toggleDarkMode()
+    } else if (panelName === 'quiz' && isStudentView) {
+      setIsQuizOpen((current) => !current)
+    } else {
+      setActivePanel(activePanel === panelName ? null : panelName)
+    }
   }
 
   const toggle3D = () => {
     if (mapRef.current) {
-      mapRef.current.toggle3D()
+      mapRef.current.toggle3D(!is3DMode)
       setIs3DMode(!is3DMode)
     }
   }
 
   const toggleDarkMode = () => {
     if (mapRef.current) {
-      mapRef.current.toggleStyle(!isDarkMode)
+      mapRef.current.toggleDarkMode(!isDarkMode)
       setIsDarkMode(!isDarkMode)
       setSelectedFeature(null)
 
@@ -342,6 +344,7 @@ const MapViewerPage = () => {
     autoEnable().catch((error) => console.error('Failed to auto-enable student layers:', error))
   }, [isStudentView, hasAutoEnabledLayers, layers, coreLayerIds])
 
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900">
       {/* Collapsible Sidebar */}
@@ -388,13 +391,11 @@ const MapViewerPage = () => {
         <DeadlineWidget
           onDeadlineClick={(deadline) => {
             if ((deadline.type || 'quiz') === 'quiz') {
-              navigate(ROUTES.QUIZ.replace(':id', deadline.id))
+              navigate(ROUTES.QUIZ.replace(':id', deadline.quiz || deadline.id))
             }
           }}
         />
 
-        {/* Panel Dropdowns */}
-        {activePanel === 'tools' && !isStudentView && <ToolsPanel />}
         {activePanel === 'layers' && (
           <LayersPanel
             layers={layers}
@@ -404,91 +405,55 @@ const MapViewerPage = () => {
             moduleCode={activeModuleCode}
           />
         )}
+
         {activePanel === 'lessons' && (
           <LessonsPanel
-            filters={lessonFilters}
-            onLessonSelect={(lessonId) => {
-              navigate(`/lessons/${lessonId}`)
-            }}
+            lessons={moduleLessons}
+            onOpenLesson={(lessonId) => navigate(`/lesson/${lessonId}`)}
           />
         )}
-        {activePanel === 'assignments' && searchParams.get('classroom') && (
-          <AssignmentList
-            classroomId={null}
-            onAssignmentClick={(assignment) => {
-              console.log('Assignment clicked:', assignment)
-              // TODO: Navigate to assignment detail
-            }}
+
+        {activePanel === 'assignments' && (
+          <AssignmentList classroomId={searchParams.get('classroom')} />
+        )}
+
+        {isStudentView && isQuizOpen && activeQuizId && (
+          <div className="absolute inset-x-4 bottom-4 z-20 mx-auto max-w-xl rounded-3xl border border-white/70 bg-white/95 p-3 shadow-2xl backdrop-blur">
+            <QuizPanel
+              quizId={activeQuizId}
+              compact
+              onStart={() => navigate(ROUTES.QUIZ.replace(':id', activeQuizId))}
+              onQuestionFocus={(question) => setQuizQuestionContext((prev) => {
+                const next = [question.prompt || question.question_text, ...prev].filter(Boolean)
+                return Array.from(new Set(next)).slice(0, 5)
+              })}
+            />
+          </div>
+        )}
+
+        {selectedFeature && (
+          <DetailPanel
+            title={getFeatureDisplayName(selectedFeature.properties)}
+            subtitle={selectedFeature.layer_name}
+            description={selectedFeature.properties?.description || 'Quan sát ký hiệu, vị trí và mối liên hệ của đối tượng này với nội dung bài học.'}
+            badges={[
+              selectedFeature.geometry_type,
+              selectedFeature.properties?.category,
+            ].filter(Boolean)}
+            fields={Object.entries(selectedFeature.properties || {})
+              .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '')
+              .slice(0, 6)
+              .map(([key, value]) => ({ label: key, value }))}
+            onClose={() => setSelectedFeature(null)}
           />
         )}
-        <AITutorPanel
-          isOpen={activePanel === 'ai'}
-          onClose={() => setActivePanel(null)}
-          context={aiContext}
-          title="AI Tutor Địa lí 10"
-        />
-
-        {selectedFeature && (() => {
-          const popupMeta = getLegendVisualMeta({
-            layerName: selectedFeature.layer_name,
-            geomType: selectedFeature.geometry_type,
-          })
-          const popupRows = Object.entries(selectedFeature.properties || {})
-            .filter(([, value]) => value !== null && value !== undefined && `${value}`.trim() !== '')
-            .filter(([key]) => ['category', 'description', 'code', 'population', 'area_km2', 'length_km'].includes(key))
-            .slice(0, 4)
-
-          return (
-            <div className="absolute bottom-24 right-6 z-20 w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{'Đối tượng đang chọn'}</p>
-                  <h4 className="mt-1 text-sm font-semibold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h4>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-slate-700" style={{ backgroundColor: popupMeta.palette.soft }}>
-                      {popupMeta.label}
-                    </span>
-                    <span className="text-xs text-slate-500">{selectedFeature.layer_name || `Layer ${selectedFeature.layer_id}`}</span>
-                  </div>
-                </div>
-                <button onClick={() => setSelectedFeature(null)} className="text-xs font-medium text-slate-500 hover:text-slate-700">{'Đóng'}</button>
-              </div>
-              <div className="mt-3 max-h-48 space-y-2 overflow-y-auto">
-                {popupRows.map(([key, value]) => (
-                  <div key={key} className="rounded-xl bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{key.replace(/_/g, ' ')}</p>
-                    <p className="mt-1 text-sm text-slate-800">{String(value)}</p>
-                  </div>
-                ))}
-                {popupRows.length === 0 && (
-                  <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                    H?y quan s?t v? tr?, k? hi?u v? ph?m vi ph?n b? c?a l?p n?y tr?n b?n ??.
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })()}
-
-        {/* Quiz Floating Button */}
-        <QuizFloatingButton
-          onClick={() => setIsQuizOpen(true)}
-          hasActiveQuiz={Boolean(activeQuizId)}
-        />
-
-        {/* Quiz Panel */}
-        <QuizPanel
-          isOpen={isQuizOpen}
-          onClose={() => setIsQuizOpen(false)}
-          quizId={activeQuizId}
-          onQuizSubmitted={(payload) => {
-            setQuizQuestionContext(payload.question_results || [])
-          }}
-          onAskAi={() => {
-            setActivePanel('ai')
-          }}
-        />
       </div>
+
+      <AITutorPanel
+        isOpen={activePanel === 'aiTutor'}
+        onClose={() => setActivePanel(null)}
+        context={aiContext}
+      />
     </div>
   )
 }

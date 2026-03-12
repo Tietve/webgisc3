@@ -40,19 +40,20 @@ const LayersPanel = ({ layers = [], enabledLayers = new Set(), onToggleLayer, st
   const filteredLayers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
     if (!query) return layers
-
     return layers.filter((layer) => [layer.name, layer.description, layer.school, layer.grade].filter(Boolean).join(' ').toLowerCase().includes(query))
   }, [layers, searchQuery])
 
   return (
-    <div className="absolute left-1/2 top-24 z-[999] w-[30rem] max-w-[calc(100vw-2rem)] -translate-x-1/2">
+    <div className="absolute top-24 left-1/2 z-[999] w-[30rem] max-w-[calc(100vw-2rem)] -translate-x-1/2">
       <Panel variant="floating" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl">
         <div className="mb-4">
           <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
             <Layers className="h-5 w-5 text-blue-600" />
             Layer quan sát
           </h3>
-          <p className="mt-2 text-sm leading-6 text-slate-600">Bật từng lớp để học sinh thấy rõ điểm, tuyến, vùng và đọc đúng chú giải của module.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Bật từng lớp để học sinh thấy rõ điểm, tuyến, vùng và đọc đúng chú giải của module.
+          </p>
         </div>
 
         {studentView && moduleMeta && (
@@ -95,7 +96,7 @@ const LayersPanel = ({ layers = [], enabledLayers = new Set(), onToggleLayer, st
                     type="checkbox"
                     checked={isEnabled}
                     onChange={() => onToggleLayer?.(layer.id, !isEnabled)}
-                    className="mt-3 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="mt-3"
                   />
 
                   <SymbolPreview layer={layer} />
@@ -105,7 +106,7 @@ const LayersPanel = ({ layers = [], enabledLayers = new Set(), onToggleLayer, st
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-slate-900">{layer.name}</p>
-                          <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-slate-700" style={{ backgroundColor: visualMeta.palette.soft }}>
+                          <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-slate-600" style={{ backgroundColor: visualMeta.palette.soft }}>
                             {visualMeta.label}
                           </span>
                         </div>
@@ -126,7 +127,6 @@ const LayersPanel = ({ layers = [], enabledLayers = new Set(), onToggleLayer, st
               </label>
             )
           })}
-
           {filteredLayers.length === 0 && <p className="py-6 text-center text-sm text-slate-500">Không tìm thấy layer phù hợp.</p>}
         </div>
       </Panel>
