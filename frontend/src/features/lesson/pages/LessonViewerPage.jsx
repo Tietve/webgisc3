@@ -5,6 +5,7 @@ import lessonService from '@services/lesson.service'
 import gisService from '@services/gis.service'
 import MapboxMap from '@components/map/MapboxMap'
 import AITutorPanel from '@components/ai/AITutorPanel'
+import { getModuleCatalog, matchLayerGuide } from '@features/grade10/data/moduleCatalog'
 
 const LessonViewerPage = () => {
   const { id } = useParams()
@@ -233,6 +234,11 @@ const LessonViewerPage = () => {
   const progress = ((currentStep + 1) / lesson.steps.length) * 100
   const isAiSupported = lesson.grade_level === '10' && lesson.semester === '1' && lesson.textbook_series === 'canh-dieu'
   const relatedLayers = (lesson.layers || []).slice(0, 5)
+  const moduleMeta = getModuleCatalog(lesson.module_code)
+  const guidedLayers = relatedLayers.map((layer) => ({
+    ...layer,
+    guide: matchLayerGuide(lesson.module_code, layer.name),
+  }))
   const map = mapRef.current?.getMap?.()
   const aiContext = {
     lesson_id: lesson.id,

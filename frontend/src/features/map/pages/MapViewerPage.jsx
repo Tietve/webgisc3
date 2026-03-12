@@ -16,6 +16,7 @@ import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
 import quizService from '@services/quiz.service'
 import lessonService from '@services/lesson.service'
+import { getModuleCatalog, matchLayerGuide } from '@features/grade10/data/moduleCatalog'
 
 const MapViewerPage = () => {
   const { user, logout } = useAuth()
