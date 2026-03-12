@@ -2,14 +2,16 @@
 Seed curated Địa lí 10 - Cánh Diều - Học kì 1 content.
 """
 from datetime import timedelta
+import json
+from pathlib import Path
 
-from django.contrib.gis.geos import LineString, MultiPolygon, Point, Polygon
+from django.contrib.gis.geos import GEOSGeometry, LineString, MultiPolygon, Point, Polygon
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
 from apps.classrooms.models import Assignment, Classroom, Enrollment
-from apps.gis_data.models import Boundary, LineFeature, MapLayer, PointOfInterest, PolygonFeature, Route
+from apps.gis_data.models import Boundary, LineFeature, MapLayer, PointOfInterest, PolygonFeature, Route, VietnamProvince
 from apps.lessons.models import Lesson, LessonStep, MapAction
 from apps.quizzes.models import Quiz, QuizAnswer, QuizQuestion
 from apps.users.models import User
@@ -253,73 +255,248 @@ class Command(BaseCommand):
             Enrollment.objects.get_or_create(classroom=classroom, student=student)
 
     def ensure_sample_geometries(self):
+        self.ensure_public_grade10_geometries()
         self.ensure_points()
         self.ensure_lines()
         self.ensure_polygons()
         self.ensure_boundaries_and_routes()
 
+    def ensure_public_grade10_geometries(self):
+        self.ensure_public_provinces()
+        self.ensure_public_points('module_01_city', 'public_grade10/processed/module01_cities.geojson')
+        self.ensure_public_points('module_05_hydro_station', 'public_grade10/processed/module05_points.geojson')
+        self.ensure_public_lines('module_01_route', 'public_grade10/processed/module01_roads.geojson')
+        self.ensure_public_polygons('module_01_region', 'public_grade10/processed/module01_regions.geojson')
+        self.ensure_public_routes('module_05_river', 'public_grade10/processed/module05_rivers.geojson')
+        self.ensure_public_boundaries('module_05_basin', 'public_grade10/processed/module05_basins.geojson')
+        self.ensure_public_polygons('module_05_sea_region', 'public_grade10/processed/module05_marine.geojson')
+        self.ensure_public_polygons('module_06_biome_zone', 'public_grade10/processed/module06_regions.geojson')
+
+    def sample_data_path(self, relative_path):
+        return Path(__file__).resolve().parents[4] / 'sample_data' / relative_path
+
+    def load_geojson_features(self, relative_path):
+        path = self.sample_data_path(relative_path)
+        if not path.exists():
+            return []
+        return json.loads(path.read_text(encoding='utf-8')).get('features', [])
+
+    def to_point_geometry(self, geometry):
+        geom = GEOSGeometry(json.dumps(geometry), srid=4326)
+        return geom if geom.geom_type == 'Point' else None
+
+    def to_line_geometry(self, geometry):
+        geom = GEOSGeometry(json.dumps(geometry), srid=4326)
+        if geom.geom_type == 'MultiLineString':
+            geom = max(list(geom), key=lambda item: item.length)
+        return geom if geom.geom_type == 'LineString' else None
+
+    def to_polygon_geometry(self, geometry):
+        geom = GEOSGeometry(json.dumps(geometry), srid=4326)
+        if geom.geom_type == 'MultiPolygon':
+            geom = max(list(geom), key=lambda item: item.area)
+        return geom if geom.geom_type == 'Polygon' else None
+
+    def to_multipolygon_geometry(self, geometry):
+        geom = GEOSGeometry(json.dumps(geometry), srid=4326)
+        if geom.geom_type == 'Polygon':
+            return MultiPolygon(geom, srid=4326)
+        return geom if geom.geom_type == 'MultiPolygon' else None
+
+    def ensure_public_provinces(self):
+        features = self.load_geojson_features('vietnam_provinces.geojson')
+        if not features:
+            return
+        seen_codes = []
+        for feature in features:
+            props = feature.get('properties', {})
+            code = props.get('code') or props.get('name')
+            geometry = self.to_multipolygon_geometry(feature.get('geometry'))
+            if not geometry:
+                continue
+            seen_codes.append(code)
+            VietnamProvince.objects.update_or_create(
+                code=code,
+                defaults={
+                    'name': props.get('name', code),
+                    'name_en': props.get('name', props.get('name_en', code)),
+                    'region': props.get('region', 'Vi?t Nam'),
+                    'population': int(float(props.get('population', 0) or 0)),
+                    'area_km2': float(props.get('area_km2', 0) or 0),
+                    'geometry': geometry,
+                },
+            )
+        VietnamProvince.objects.exclude(code__in=seen_codes).delete()
+
+    def ensure_public_points(self, category, relative_path):
+        features = self.load_geojson_features(relative_path)
+        if not features:
+            return
+        names = []
+        for feature in features:
+            props = feature.get('properties', {})
+            geometry = self.to_point_geometry(feature.get('geometry'))
+            if not geometry:
+                continue
+            name = props.get('name') or f'{category}-{len(names)+1}'
+            names.append(name)
+            PointOfInterest.objects.update_or_create(
+                name=name,
+                category=category,
+                defaults={
+                    'description': props.get('description', ''),
+                    'geometry': geometry,
+                },
+            )
+        PointOfInterest.objects.filter(category=category).exclude(name__in=names).delete()
+
+    def ensure_public_lines(self, category, relative_path):
+        features = self.load_geojson_features(relative_path)
+        if not features:
+            return
+        names = []
+        for feature in features:
+            props = feature.get('properties', {})
+            geometry = self.to_line_geometry(feature.get('geometry'))
+            if not geometry:
+                continue
+            name = props.get('name') or f'{category}-{len(names)+1}'
+            names.append(name)
+            LineFeature.objects.update_or_create(
+                name=name,
+                category=category,
+                defaults={
+                    'description': props.get('description', ''),
+                    'geometry': geometry,
+                },
+            )
+        LineFeature.objects.filter(category=category).exclude(name__in=names).delete()
+
+    def ensure_public_polygons(self, category, relative_path):
+        features = self.load_geojson_features(relative_path)
+        if not features:
+            return
+        names = []
+        for feature in features:
+            props = feature.get('properties', {})
+            geometry = self.to_polygon_geometry(feature.get('geometry'))
+            if not geometry:
+                continue
+            name = props.get('name') or f'{category}-{len(names)+1}'
+            names.append(name)
+            PolygonFeature.objects.update_or_create(
+                name=name,
+                category=category,
+                defaults={
+                    'description': props.get('description', ''),
+                    'geometry': geometry,
+                },
+            )
+        PolygonFeature.objects.filter(category=category).exclude(name__in=names).delete()
+
+    def ensure_public_routes(self, route_type, relative_path):
+        features = self.load_geojson_features(relative_path)
+        if not features:
+            return
+        names = []
+        for feature in features:
+            props = feature.get('properties', {})
+            geometry = self.to_line_geometry(feature.get('geometry'))
+            if not geometry:
+                continue
+            name = props.get('name') or f'{route_type}-{len(names)+1}'
+            names.append(name)
+            Route.objects.update_or_create(
+                name=name,
+                type=route_type,
+                defaults={
+                    'length_km': float(props.get('length_km', 0) or 0),
+                    'geometry': geometry,
+                },
+            )
+        Route.objects.filter(type=route_type).exclude(name__in=names).delete()
+
+    def ensure_public_boundaries(self, boundary_type, relative_path):
+        features = self.load_geojson_features(relative_path)
+        if not features:
+            return
+        names = []
+        for feature in features:
+            props = feature.get('properties', {})
+            geometry = self.to_multipolygon_geometry(feature.get('geometry'))
+            if not geometry:
+                continue
+            name = props.get('name') or f'{boundary_type}-{len(names)+1}'
+            names.append(name)
+            Boundary.objects.update_or_create(
+                name=name,
+                type=boundary_type,
+                defaults={
+                    'code': props.get('code', ''),
+                    'area_km2': float(props.get('area_km2', 0) or 0),
+                    'geometry': geometry,
+                },
+            )
+        Boundary.objects.filter(type=boundary_type).exclude(name__in=names).delete()
+
     def ensure_points(self):
         points = [
-            ('Hà Nội', 'module_01_city', 'Đô thị trung tâm', Point(105.8342, 21.0278, srid=4326)),
-            ('Đà Nẵng', 'module_01_city', 'Đô thị ven biển', Point(108.2022, 16.0544, srid=4326)),
-            ('TP. Hồ Chí Minh', 'module_01_city', 'Đô thị lớn phía Nam', Point(106.6297, 10.8231, srid=4326)),
-            ('Điểm A', 'module_02_coordinate', 'Mẫu đọc tọa độ gần xích đạo', Point(30, 2, srid=4326)),
-            ('Điểm B', 'module_02_coordinate', 'Mẫu đọc tọa độ ở Bắc bán cầu', Point(105, 21, srid=4326)),
-            ('Điểm C', 'module_02_coordinate', 'Mẫu đọc tọa độ ở Nam bán cầu', Point(-60, -15, srid=4326)),
-            ('Vành đai lửa mẫu', 'module_03_hazard_point', 'Điểm núi lửa minh họa', Point(138, 36, srid=4326)),
-            ('Động đất mẫu', 'module_03_hazard_point', 'Điểm động đất minh họa', Point(142, 38, srid=4326)),
-            ('Hà Nội khí tượng', 'module_04_climate_station', 'Trạm khí tượng miền Bắc', Point(105.84, 21.03, srid=4326)),
-            ('Huế khí tượng', 'module_04_climate_station', 'Trạm khí tượng miền Trung', Point(107.58, 16.46, srid=4326)),
-            ('Cần Thơ khí tượng', 'module_04_climate_station', 'Trạm khí tượng miền Nam', Point(105.78, 10.03, srid=4326)),
-            ('Trạm Sơn Tây', 'module_05_hydro_station', 'Trạm thủy văn minh họa', Point(105.51, 21.14, srid=4326)),
-            ('Trạm Việt Trì', 'module_05_hydro_station', 'Theo dõi mực nước sông', Point(105.41, 21.32, srid=4326)),
-            ('Rừng ngập mặn Cà Mau', 'module_06_ecosystem_point', 'Hệ sinh thái ven biển', Point(105.15, 8.75, srid=4326)),
-            ('Vườn quốc gia Cúc Phương', 'module_06_ecosystem_point', 'Hệ sinh thái rừng nhiệt đới', Point(105.61, 20.35, srid=4326)),
+            ('?i?m A', 'module_02_coordinate', 'M?u ??c t?a ?? g?n x?ch ??o', Point(30, 2, srid=4326)),
+            ('?i?m B', 'module_02_coordinate', 'M?u ??c t?a ?? ? B?c b?n c?u', Point(105, 21, srid=4326)),
+            ('?i?m C', 'module_02_coordinate', 'M?u ??c t?a ?? ? Nam b?n c?u', Point(-60, -15, srid=4326)),
+            ('V?nh ?ai l?a m?u', 'module_03_hazard_point', '?i?m n?i l?a minh h?a', Point(138, 36, srid=4326)),
+            ('??ng ??t m?u', 'module_03_hazard_point', '?i?m ??ng ??t minh h?a', Point(142, 38, srid=4326)),
+            ('H? N?i kh? t??ng', 'module_04_climate_station', 'Tr?m kh? t??ng mi?n B?c', Point(105.84, 21.03, srid=4326)),
+            ('Hu? kh? t??ng', 'module_04_climate_station', 'Tr?m kh? t??ng mi?n Trung', Point(107.58, 16.46, srid=4326)),
+            ('C?n Th? kh? t??ng', 'module_04_climate_station', 'Tr?m kh? t??ng mi?n Nam', Point(105.78, 10.03, srid=4326)),
+            ('R?ng ng?p m?n C? Mau', 'module_06_ecosystem_point', 'H? sinh th?i ven bi?n', Point(105.15, 8.75, srid=4326)),
+            ('V??n qu?c gia C?c Ph??ng', 'module_06_ecosystem_point', 'H? sinh th?i r?ng nhi?t ??i', Point(105.61, 20.35, srid=4326)),
+            ('V??n qu?c gia Yok ??n', 'module_06_ecosystem_point', 'H? sinh th?i r?ng kh?p T?y Nguy?n', Point(107.716, 12.862, srid=4326)),
         ]
         for name, category, description, geometry in points:
             PointOfInterest.objects.update_or_create(name=name, category=category, defaults={'description': description, 'geometry': geometry})
 
     def ensure_lines(self):
         lines = [
-            ('Trục giao thông Bắc - Nam', 'module_01_route', 'Tuyến giao thông minh họa', [(105.84, 21.02), (108.2, 16.05), (106.63, 10.82)]),
-            ('Xích đạo', 'module_02_reference_lines', 'Vĩ tuyến 0 độ', [(-180, 0), (180, 0)]),
-            ('Kinh tuyến gốc', 'module_02_reference_lines', 'Kinh tuyến 0 độ', [(0, -80), (0, 80)]),
-            ('Chí tuyến Bắc', 'module_02_reference_lines', 'Vĩ tuyến 23 độ 27 phút Bắc', [(-180, 23.5), (180, 23.5)]),
-            ('Ranh giới mảng Thái Bình Dương', 'module_03_plate_boundary', 'Ranh giới mảng kiến tạo minh họa', [(130, 35), (140, 30), (150, 20)]),
-            ('Ranh giới mảng Á - Âu', 'module_03_plate_boundary', 'Ranh giới mảng kiến tạo minh họa', [(80, 35), (95, 30), (105, 27)]),
-            ('Tín phong Bắc bán cầu', 'module_04_wind_belt', 'Đai gió chính', [(-60, 30), (-20, 20), (20, 10)]),
-            ('Tín phong Nam bán cầu', 'module_04_wind_belt', 'Đai gió chính', [(-50, -25), (-10, -15), (30, -5)]),
-            ('Gió tây ôn đới', 'module_04_wind_belt', 'Đai gió chính', [(-80, 45), (-20, 50), (40, 55)]),
+            ('X?ch ??o', 'module_02_latitude_line', '???ng v? tuy?n 0?', [(-180, 0), (180, 0)]),
+            ('Kinh tuy?n g?c', 'module_02_longitude_line', '???ng kinh tuy?n 0?', [(0, -80), (0, 80)]),
+            ('Ch? tuy?n B?c', 'module_02_latitude_line', 'V? tuy?n 23,5?B', [(-180, 23.5), (180, 23.5)]),
+            ('Ch? tuy?n Nam', 'module_02_latitude_line', 'V? tuy?n 23,5?N', [(-180, -23.5), (180, -23.5)]),
+            ('V?ng c?c B?c', 'module_02_latitude_line', 'V? tuy?n 66,5?B', [(-180, 66.5), (180, 66.5)]),
+            ('V?ng c?c Nam', 'module_02_latitude_line', 'V? tuy?n 66,5?N', [(-180, -66.5), (180, -66.5)]),
+            ('Ranh gi?i m?ng minh h?a', 'module_03_plate_boundary', 'Ranh gi?i m?ng ki?n t?o ??n gi?n h?a', [(95, 8), (105, 18), (118, 30), (140, 38)]),
+            ('?ai ?p th?p x?ch ??o', 'module_04_pressure_belt', 'D?i ?p th?p g?n x?ch ??o', [(-180, 5), (180, 5)]),
+            ('Gi? t?n phong ??ng B?c', 'module_04_wind_belt', 'H??ng gi? ch? ??o ? b?n c?u B?c', [(115, 23), (105, 18), (95, 12)]),
+            ('Gi? t?n phong ??ng Nam', 'module_04_wind_belt', 'H??ng gi? ch? ??o ? b?n c?u Nam', [(120, -18), (110, -10), (100, -2)]),
         ]
         for name, category, description, coords in lines:
             LineFeature.objects.update_or_create(name=name, category=category, defaults={'description': description, 'geometry': LineString(coords, srid=4326)})
 
     def ensure_polygons(self):
         polygons = [
-            ('Vùng biểu hiện nông nghiệp', 'module_01_region', 'Ví dụ vùng trên bản đồ', [(104, 21), (107, 21), (107, 18), (104, 18), (104, 21)]),
-            ('UTC+7 minh họa', 'module_02_timezone', 'Vùng múi giờ minh họa', [(97.5, -10), (112.5, -10), (112.5, 35), (97.5, 35), (97.5, -10)]),
-            ('Miền núi trẻ', 'module_03_landform', 'Dạng địa hình chịu tác động kiến tạo', [(99, 29), (106, 29), (106, 23), (99, 23), (99, 29)]),
-            ('Đồng bằng bồi tụ', 'module_03_landform', 'Dạng địa hình do ngoại lực', [(105, 11.5), (108, 11.5), (108, 9.5), (105, 9.5), (105, 11.5)]),
-            ('Miền khí hậu nhiệt đới ẩm', 'module_04_climate_zone', 'Miền khí hậu minh họa', [(101, 22), (110, 22), (110, 8), (101, 8), (101, 22)]),
-            ('Biển Đông minh họa', 'module_05_sea_region', 'Không gian biển minh họa', [(106, 21), (120, 21), (120, 7), (106, 7), (106, 21)]),
-            ('Đất feralit', 'module_06_soil_zone', 'Đới đất minh họa', [(103.5, 21), (110.5, 21), (110.5, 11), (103.5, 11), (103.5, 21)]),
-            ('Đất phù sa', 'module_06_soil_zone', 'Đới đất minh họa', [(105, 11), (107.2, 11), (107.2, 9), (105, 9), (105, 11)]),
-            ('Rừng nhiệt đới ẩm', 'module_06_biome_zone', 'Đới sinh vật minh họa', [(103.5, 19), (111, 19), (111, 10), (103.5, 10), (103.5, 19)]),
-            ('Sinh vật núi cao', 'module_06_biome_zone', 'Biểu hiện phi địa đới theo độ cao', [(103.8, 23.5), (105.5, 23.5), (105.5, 21.8), (103.8, 21.8), (103.8, 23.5)]),
+            ('UTC+7 minh h?a', 'module_02_timezone', 'V?ng m?i gi? minh h?a', [(97.5, -10), (112.5, -10), (112.5, 35), (97.5, 35), (97.5, -10)]),
+            ('Mi?n n?i tr?', 'module_03_landform', 'D?ng ??a h?nh ch?u t?c ??ng ki?n t?o', [(99, 29), (106, 29), (106, 23), (99, 23), (99, 29)]),
+            ('??ng b?ng b?i t?', 'module_03_landform', 'D?ng ??a h?nh do ngo?i l?c', [(105, 11.5), (108, 11.5), (108, 9.5), (105, 9.5), (105, 11.5)]),
+            ('Mi?n kh? h?u nhi?t ??i ?m', 'module_04_climate_zone', 'Mi?n kh? h?u minh h?a', [(101, 22), (110, 22), (110, 8), (101, 8), (101, 22)]),
+            ('??t feralit', 'module_06_soil_zone', '??i ??t minh h?a theo n?n nhi?t ??i ?m', [(103.5, 21), (110.5, 21), (110.5, 11), (103.5, 11), (103.5, 21)]),
+            ('??t ph? sa', 'module_06_soil_zone', '??i ??t minh h?a cho ??ng b?ng ch?u th?', [(105, 11), (107.2, 11), (107.2, 9), (105, 9), (105, 11)]),
         ]
         for name, category, description, coords in polygons:
             PolygonFeature.objects.update_or_create(name=name, category=category, defaults={'description': description, 'geometry': Polygon(coords, srid=4326)})
 
     def ensure_boundaries_and_routes(self):
-        basin = Polygon([(103.5, 23.3), (106.7, 23.3), (106.7, 20.1), (103.5, 20.1), (103.5, 23.3)], srid=4326)
-        Boundary.objects.update_or_create(name='Lưu vực sông Hồng', type='module_05_basin', defaults={'code': 'LVSH', 'geometry': MultiPolygon(basin, srid=4326)})
-        routes = [
-            ('Sông Hồng', 'module_05_river', [(103.9, 22.5), (104.8, 21.8), (105.6, 21.1), (106.2, 20.8)]),
-            ('Sông Đà', 'module_05_river', [(103.3, 22.0), (104.5, 21.4), (105.4, 21.0)]),
-            ('Sông Tiền', 'module_05_river', [(105.0, 10.7), (106.2, 10.4), (106.8, 10.2)]),
-        ]
-        for name, route_type, coords in routes:
-            Route.objects.update_or_create(name=name, type=route_type, defaults={'length_km': len(coords) * 120, 'geometry': LineString(coords, srid=4326)})
+        if not Boundary.objects.filter(type='module_05_basin').exists():
+            basin = Polygon([(103.5, 23.3), (106.7, 23.3), (106.7, 20.1), (103.5, 20.1), (103.5, 23.3)], srid=4326)
+            Boundary.objects.update_or_create(name='L?u v?c s?ng H?ng', type='module_05_basin', defaults={'code': 'LVSH', 'geometry': MultiPolygon(basin, srid=4326)})
+
+        if not Route.objects.filter(type='module_05_river').exists():
+            routes = [
+                ('S?ng H?ng', 'module_05_river', [(103.9, 22.5), (104.8, 21.8), (105.6, 21.1), (106.2, 20.8)]),
+                ('S?ng ??', 'module_05_river', [(103.3, 22.0), (104.5, 21.4), (105.4, 21.0)]),
+                ('S?ng Ti?n', 'module_05_river', [(105.0, 10.7), (106.2, 10.4), (106.8, 10.2)]),
+            ]
+            for name, route_type, coords in routes:
+                Route.objects.update_or_create(name=name, type=route_type, defaults={'length_km': len(coords) * 120, 'geometry': LineString(coords, srid=4326)})
 
     def upsert_layers(self, module):
         layers = []

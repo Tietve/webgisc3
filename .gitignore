@@ -60,3 +60,6 @@ node_modules/
 
 # Windows
 nul
+
+sample_data/public_grade10/raw/
+

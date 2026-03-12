@@ -1,0 +1,15 @@
+{
+"type": "FeatureCollection",
+"name": "module05_points",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 1", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4050972210.0 }, "geometry": { "type": "Point", "coordinates": [ 110.085416666666902, 23.397916666666845 ] } },
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 2", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4050972260.0 }, "geometry": { "type": "Point", "coordinates": [ 110.093750000000284, 23.39375 ] } },
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 3", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4051005540.0 }, "geometry": { "type": "Point", "coordinates": [ 103.164583333333667, 22.081250000000182 ] } },
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 4", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4051005660.0 }, "geometry": { "type": "Point", "coordinates": [ 103.164583333333667, 22.077083333333519 ] } },
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 5", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4050013000.0 }, "geometry": { "type": "Point", "coordinates": [ 108.539583333333553, 21.897916666666788 ] } },
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 6", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4050013000.0 }, "geometry": { "type": "Point", "coordinates": [ 108.535416666666947, 21.893750000000182 ] } },
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 7", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4050013000.0 }, "geometry": { "type": "Point", "coordinates": [ 108.539583333333553, 21.893750000000182 ] } },
+{ "type": "Feature", "properties": { "name": "?i?m quan s?t l?u v?c 8", "category": "module_05_hydro_station", "description": "?i?m ??u ra l?u v?c t? HydroBASINS, d?ng thay ?i?m quan s?t ngu?n n??c.", "code": 4050013000.0 }, "geometry": { "type": "Point", "coordinates": [ 108.535416666666947, 21.889583333333519 ] } }
+]
+}

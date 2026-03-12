@@ -1,0 +1,19 @@
+{
+"type": "FeatureCollection",
+"name": "module01_cities",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "Ho Chi Minh City", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Ho Chi Minh", "population": 5314000 }, "geometry": { "type": "Point", "coordinates": [ 106.702984702187479, 10.762124565177512 ] } },
+{ "type": "Feature", "properties": { "name": "Hanoi", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Hanoi", "population": 4378000 }, "geometry": { "type": "Point", "coordinates": [ 105.8480683, 21.0352731 ] } },
+{ "type": "Feature", "properties": { "name": "Haiphong", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Haiphong", "population": 1969000 }, "geometry": { "type": "Point", "coordinates": [ 106.6781469, 20.8319522 ] } },
+{ "type": "Feature", "properties": { "name": "Can Tho", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Can Tho", "population": 1121000 }, "geometry": { "type": "Point", "coordinates": [ 105.7700191, 10.0499925 ] } },
+{ "type": "Feature", "properties": { "name": "Da Nang", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Da Nang", "population": 1000000 }, "geometry": { "type": "Point", "coordinates": [ 108.2499711, 16.0600391 ] } },
+{ "type": "Feature", "properties": { "name": "Hue", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Hue", "population": 950000 }, "geometry": { "type": "Point", "coordinates": [ 107.5800378, 16.4699882 ] } },
+{ "type": "Feature", "properties": { "name": "Qui Nhon", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Qui Nhon", "population": 805290 }, "geometry": { "type": "Point", "coordinates": [ 109.1800435, 13.7799715 ] } },
+{ "type": "Feature", "properties": { "name": "Biên Hòa", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Biên Hòa", "population": 652646 }, "geometry": { "type": "Point", "coordinates": [ 106.8300577, 10.9700139 ] } },
+{ "type": "Feature", "properties": { "name": "Vinh", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Vinh", "population": 593645 }, "geometry": { "type": "Point", "coordinates": [ 105.6799987, 18.6999813 ] } },
+{ "type": "Feature", "properties": { "name": "Thái Nguyên", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Thái Nguyên", "population": 500000 }, "geometry": { "type": "Point", "coordinates": [ 105.8300154, 21.5999593 ] } },
+{ "type": "Feature", "properties": { "name": "Nha Trang", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Nha Trang", "population": 411556 }, "geometry": { "type": "Point", "coordinates": [ 109.1700183, 12.2500391 ] } },
+{ "type": "Feature", "properties": { "name": "Cà Mau", "category": "module_01_city", "description": "?? th? th?t t? Natural Earth, d?ng ?? nh?n di?n ??i t??ng ?i?m tr?n b?n ??.", "short_label": "Cà Mau", "population": 356636 }, "geometry": { "type": "Point", "coordinates": [ 105.1500052, 9.1773584 ] } }
+]
+}
