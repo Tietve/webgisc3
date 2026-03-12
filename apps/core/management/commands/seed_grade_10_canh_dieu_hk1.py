@@ -235,7 +235,14 @@ class Command(BaseCommand):
         classroom, _ = Classroom.objects.update_or_create(
             teacher=teacher,
             name=CURATED_CLASSROOM_NAME,
-            defaults={**CURRICULUM, 'module_code': '', 'is_published': True},
+            defaults={
+                'subject': CURRICULUM['subject'],
+                'grade_level': CURRICULUM['grade_level'],
+                'semester': CURRICULUM['semester'],
+                'textbook_series': CURRICULUM['textbook_series'],
+                'module_code': '',
+                'is_published': True,
+            },
         )
         return classroom
 
