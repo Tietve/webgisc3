@@ -247,7 +247,7 @@ class Command(BaseCommand):
         return classroom
 
     def enroll_demo_students(self, classroom):
-        for student in User.objects.filter(role='student').order_by('id')[:3]:
+        for student in User.objects.filter(role='student').order_by('id'):
             Enrollment.objects.get_or_create(classroom=classroom, student=student)
 
     def ensure_sample_geometries(self):
