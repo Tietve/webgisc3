@@ -317,9 +317,11 @@ class Command(BaseCommand):
         if not features:
             return
         seen_codes = []
-        for feature in features:
+        for index, feature in enumerate(features, start=1):
             props = feature.get('properties', {})
             code = self.build_short_code(props.get('code'), props.get('name'))
+            if code in seen_codes:
+                code = self.build_short_code(f"{index:02d}", props.get('name'))
             geometry = self.to_multipolygon_geometry(feature.get('geometry'))
             if not geometry:
                 continue
