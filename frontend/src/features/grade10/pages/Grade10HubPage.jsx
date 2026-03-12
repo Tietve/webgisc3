@@ -60,21 +60,15 @@ const Grade10HubPage = () => {
     <MainLayout>
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="overflow-hidden rounded-[2rem] bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 p-8 text-white shadow-xl">
-          <p className="text-sm uppercase tracking-[0.25em] text-blue-100">MVP h\u1ecdc sinh</p>
-          <h1 className="mt-2 max-w-4xl text-4xl font-black leading-tight">\u0110\u1ecba l\u00ed 10 \u2022 C\u00e1nh Di\u1ec1u \u2022 H\u1ecdc k\u00ec 1</h1>
-          <p className="mt-3 max-w-3xl text-blue-50/90">
-            6 module c\u1ed1t l\u00f5i \u0111\u1ec3 h\u1ecdc sinh t\u1ef1 h\u1ecdc, m\u1edf b\u00e0i th\u1ef1c h\u00e0nh WebGIS, l\u00e0m quiz v\u00e0 theo d\u00f5i t\u00e0i nguy\u00ean \u0111\u01b0\u1ee3c giao t\u1eeb l\u1edbp.
-          </p>
+          <p className="text-sm uppercase tracking-[0.25em] text-blue-100">{'MVP h?c sinh'}</p>
+          <h1 className="mt-2 max-w-4xl text-4xl font-black leading-tight">{'??a l? 10 ? C?nh Di?u ? H?c k? 1'}</h1>
+          <p className="mt-3 max-w-3xl text-blue-50/90">{'6 module c?t l?i ?? h?c sinh t? h?c, m? b?i th?c h?nh WebGIS, l?m quiz v? theo d?i t?i nguy?n ???c giao t? l?p.'}</p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <button onClick={() => openModuleMap('module-05')} className="rounded-xl bg-white px-4 py-2 font-semibold text-blue-700 shadow-sm">
-              V\u00e0o nhanh Module 05
-            </button>
+            <button onClick={() => openModuleMap('module-05')} className="rounded-xl bg-white px-4 py-2 font-semibold text-blue-700 shadow-sm">{'V?o nhanh Module 05'}</button>
             <button
               onClick={() => navigate(`${ROUTES.MAP}?grade=10&semester=1&textbook=canh-dieu&studentView=1`)}
               className="rounded-xl border border-white/40 px-4 py-2 font-semibold text-white"
-            >
-              M\u1edf b\u1ea3n \u0111\u1ed3 l\u1edbp 10
-            </button>
+            >{'M? b?n ?? l?p 10'}</button>
           </div>
         </section>
 
@@ -82,7 +76,7 @@ const Grade10HubPage = () => {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Modules</h2>
-              <p className="text-sm text-gray-600">M\u1ed7i module g\u1ed3m b\u00e0i kh\u00e1i qu\u00e1t, b\u00e0i th\u1ef1c h\u00e0nh b\u1ea3n \u0111\u1ed3 v\u00e0 quiz ng\u1eafn.</p>
+              <p className="text-sm text-gray-600">{'M?i module g?m b?i kh?i qu?t, b?i th?c h?nh b?n ?? v? quiz ng?n.'}</p>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -108,13 +102,9 @@ const Grade10HubPage = () => {
                   ))}
                 </div>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <button onClick={() => openModuleMap(module.code)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
-                    M\u1edf map theo module
-                  </button>
+                  <button onClick={() => openModuleMap(module.code)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">{'M? map theo module'}</button>
                   {module.quizId ? (
-                    <button onClick={() => navigate(getRoute.quiz(module.quizId))} className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">
-                      L\u00e0m quiz
-                    </button>
+                    <button onClick={() => navigate(getRoute.quiz(module.quizId))} className="rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">{'L?m quiz'}</button>
                   ) : null}
                 </div>
               </div>
@@ -124,7 +114,7 @@ const Grade10HubPage = () => {
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">B\u00e0i \u0111\u01b0\u1ee3c giao t\u1eeb l\u1edbp</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{'B?i ???c giao t? l?p'}</h2>
             <div className="mt-4 space-y-3">
               {classrooms.slice(0, 5).map((classroom) => (
                 <div key={classroom.id} className="rounded-2xl bg-slate-50 p-4">
@@ -137,7 +127,7 @@ const Grade10HubPage = () => {
           </div>
 
           <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900">Deadline g\u1ea7n nh\u1ea5t</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{'Deadline g?n nh?t'}</h2>
             <div className="mt-4 space-y-3">
               {deadlines.slice(0, 5).map((deadline) => (
                 <div key={`${deadline.type || 'quiz'}-${deadline.id}`} className="rounded-2xl bg-amber-50 p-4">
