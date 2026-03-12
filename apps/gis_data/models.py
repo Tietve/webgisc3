@@ -72,7 +72,7 @@ class MapLayer(models.Model):
         verbose_name_plural = 'Map Layers'
         ordering = ['name']
         indexes = [
-            models.Index(fields=['school', 'grade'], name='idx_map_layers_school_grade_orm'),
+            models.Index(fields=['school', 'grade'], name='idx_maplay_sch_grade'),
         ]
 
     def __str__(self):

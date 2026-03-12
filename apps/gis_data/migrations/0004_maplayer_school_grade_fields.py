@@ -14,9 +14,9 @@ class Migration(migrations.Migration):
                     sql=(
                         "ALTER TABLE map_layers ADD COLUMN IF NOT EXISTS school VARCHAR(50);"
                         "ALTER TABLE map_layers ADD COLUMN IF NOT EXISTS grade VARCHAR(10);"
-                        "CREATE INDEX IF NOT EXISTS idx_map_layers_school_grade_orm ON map_layers(school, grade);"
+                        "CREATE INDEX IF NOT EXISTS idx_maplay_sch_grade ON map_layers(school, grade);"
                     ),
-                    reverse_sql="DROP INDEX IF EXISTS idx_map_layers_school_grade_orm;",
+                    reverse_sql="DROP INDEX IF EXISTS idx_maplay_sch_grade;",
                 ),
             ],
             state_operations=[
@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ),
                 migrations.AddIndex(
                     model_name='maplayer',
-                    index=models.Index(fields=['school', 'grade'], name='idx_map_layers_school_grade_orm'),
+                    index=models.Index(fields=['school', 'grade'], name='idx_maplay_sch_grade'),
                 ),
             ],
         ),
