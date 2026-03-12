@@ -6,6 +6,7 @@ import gisService from '@services/gis.service'
 import MapboxMap from '@components/map/MapboxMap'
 import AITutorPanel from '@components/ai/AITutorPanel'
 import { getModuleCatalog, matchLayerGuide } from '@features/grade10/data/moduleCatalog'
+import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureDisplayName, getLayerVisualSpec } from '@features/map/utils/layerPresentation'
 
 const LessonViewerPage = () => {
   const { id } = useParams()
@@ -17,6 +18,7 @@ const LessonViewerPage = () => {
   const [error, setError] = useState(null)
   const [mapReady, setMapReady] = useState(false)
   const [isAiOpen, setIsAiOpen] = useState(false)
+  const [selectedFeature, setSelectedFeature] = useState(null)
 
   // Track which layers are currently active on the map
   const activeLayers = useRef(new Set())
@@ -62,54 +64,63 @@ const LessonViewerPage = () => {
   const addLayerToMap = useCallback((layerId, featuresData) => {
     if (!mapRef.current || !featuresData.features || featuresData.features.length === 0) return
 
-    mapRef.current.addGeoJSONSource(`layer-${layerId}`, featuresData)
-
+    const layerMeta = (lesson?.layers || []).find((item) => item.id === layerId) || {}
     const firstFeature = featuresData.features[0]
     const geomType = firstFeature.geometry.type
+    const spec = getLayerVisualSpec({ layerName: layerMeta.name, geomType })
+
+    mapRef.current.addGeoJSONSource(`layer-${layerId}`, featuresData)
+
+    const handleFeatureClick = (feature) => {
+      const properties = feature.properties || {}
+      setSelectedFeature({
+        layer_id: layerId,
+        layer_name: layerMeta.name,
+        geometry_type: geomType,
+        properties,
+      })
+      const coordinates = getFeatureAnchor(feature)
+      if (coordinates) {
+        mapRef.current.showPopup(coordinates, buildFeaturePopupHTML({ properties, accent: spec.palette.base, layerName: layerMeta.name }))
+      }
+    }
 
     if (geomType === 'Point' || geomType === 'MultiPoint') {
       mapRef.current.addLayer({
         id: `layer-${layerId}`,
         type: 'circle',
         source: `layer-${layerId}`,
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#34a853',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
-        }
+        paint: spec.paint,
       })
-    } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
+      mapRef.current.addClickHandler(`layer-${layerId}`, handleFeatureClick)
+      return
+    }
+
+    if (geomType === 'LineString' || geomType === 'MultiLineString') {
       mapRef.current.addLayer({
         id: `layer-${layerId}`,
         type: 'line',
         source: `layer-${layerId}`,
-        paint: {
-          'line-color': '#667eea',
-          'line-width': 3
-        }
+        paint: spec.paint,
       })
-    } else if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
-      mapRef.current.addLayer({
-        id: `layer-${layerId}-fill`,
-        type: 'fill',
-        source: `layer-${layerId}`,
-        paint: {
-          'fill-color': '#f5576c',
-          'fill-opacity': 0.3
-        }
-      })
-      mapRef.current.addLayer({
-        id: `layer-${layerId}-outline`,
-        type: 'line',
-        source: `layer-${layerId}`,
-        paint: {
-          'line-color': '#f5576c',
-          'line-width': 2
-        }
-      })
+      mapRef.current.addClickHandler(`layer-${layerId}`, handleFeatureClick)
+      return
     }
-  }, [])
+
+    mapRef.current.addLayer({
+      id: `layer-${layerId}-fill`,
+      type: 'fill',
+      source: `layer-${layerId}`,
+      paint: spec.fillPaint,
+    })
+    mapRef.current.addLayer({
+      id: `layer-${layerId}-outline`,
+      type: 'line',
+      source: `layer-${layerId}`,
+      paint: spec.outlinePaint,
+    })
+    mapRef.current.addClickHandler(`layer-${layerId}-fill`, handleFeatureClick)
+  }, [lesson])
 
   const executeMapAction = useCallback(async (mapAction) => {
     if (!mapAction || !mapRef.current) return
@@ -295,6 +306,18 @@ const LessonViewerPage = () => {
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Map panel (left / top on mobile) */}
         <div className="lg:w-[65%] w-full h-[45vh] lg:h-full relative shrink-0">
+          {selectedFeature && (
+            <div className="absolute left-4 top-4 z-10 w-72 max-w-[calc(100%-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{'\u0110\u1ed1i t\u01b0\u1ee3ng \u0111ang ch\u1ecdn'}</p>
+                  <h3 className="mt-1 text-sm font-semibold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h3>
+                  <p className="mt-1 text-xs text-slate-500">{selectedFeature.layer_name || `Layer ${selectedFeature.layer_id}`}</p>
+                </div>
+                <button onClick={() => setSelectedFeature(null)} className="text-xs font-medium text-slate-500 hover:text-slate-700">{'\u0110\xf3ng'}</button>
+              </div>
+            </div>
+          )}
           <MapboxMap
             ref={mapRef}
             initialCenter={[105.8342, 21.0278]}

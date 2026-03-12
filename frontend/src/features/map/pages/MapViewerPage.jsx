@@ -17,6 +17,7 @@ import gisService from '@services/gis.service'
 import quizService from '@services/quiz.service'
 import lessonService from '@services/lesson.service'
 import { getModuleCatalog, matchLayerGuide } from '@features/grade10/data/moduleCatalog'
+import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureDisplayName, getLayerVisualSpec } from '@features/map/utils/layerPresentation'
 
 const MapViewerPage = () => {
   const { user, logout } = useAuth()
@@ -81,7 +82,7 @@ const MapViewerPage = () => {
   const curatedLayerIds = useMemo(() => {
     const ids = new Set()
     moduleLessons.forEach((lesson) => {
-      ;(lesson.layers || []).forEach((layer) => ids.add(layer.id))
+      (lesson.layers || []).forEach((layer) => ids.add(layer.id))
     })
     return ids
   }, [moduleLessons])
@@ -159,143 +160,87 @@ const MapViewerPage = () => {
   const addLayerToMap = (layerId, featuresData) => {
     if (!mapRef.current || !featuresData.features || featuresData.features.length === 0) return
 
-    mapRef.current.addGeoJSONSource(`layer-${layerId}`, featuresData)
-
+    const layerMeta = layers.find((item) => item.id === layerId) || {}
     const firstFeature = featuresData.features[0]
     const geomType = firstFeature.geometry.type
+    const spec = getLayerVisualSpec({ layerName: layerMeta.name, geomType })
+
+    mapRef.current.addGeoJSONSource(`layer-${layerId}`, featuresData)
 
     if (geomType === 'Point' || geomType === 'MultiPoint') {
       mapRef.current.addLayer({
         id: `layer-${layerId}`,
         type: 'circle',
         source: `layer-${layerId}`,
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#34a853',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
+        paint: spec.paint,
+      })
+      mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
+        const properties = feature.properties || {}
+        setSelectedFeature({
+          layer_id: layerId,
+          layer_name: layerMeta.name,
+          geometry_type: geomType,
+          properties,
+        })
+        const coordinates = getFeatureAnchor(feature)
+        if (coordinates) {
+          mapRef.current.showPopup(coordinates, buildFeaturePopupHTML({ properties, accent: spec.palette.base, layerName: layerMeta.name }))
         }
       })
+      return
+    }
 
-      mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
-        const coordinates = feature.geometry.coordinates.slice()
-        const properties = feature.properties
-        setSelectedFeature({ layer_id: layerId, geometry_type: geomType, properties })
-
-        let popupHTML = `
-          <div style="font-family: system-ui, sans-serif; max-width: 240px;">
-            <div style="background: #34a853; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-              <strong style="font-size: 14px;">${properties.name || 'Unnamed Location'}</strong>
-            </div>
-            <table style="width: 100%; border-collapse: collapse;">
-        `
-
-        Object.keys(properties).forEach(key => {
-          if (key !== 'name' && key !== 'id' && properties[key]) {
-            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
-            popupHTML += `
-              <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
-                <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
-              </tr>
-            `
-          }
-        })
-
-        popupHTML += '</table></div>'
-        mapRef.current.showPopup(coordinates, popupHTML)
-      })
-    } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
+    if (geomType === 'LineString' || geomType === 'MultiLineString') {
       mapRef.current.addLayer({
         id: `layer-${layerId}`,
         type: 'line',
         source: `layer-${layerId}`,
-        paint: {
-          'line-color': '#34a853',
-          'line-width': 3
-        }
+        paint: spec.paint,
       })
-
       mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
-        const coordinates = feature.geometry.coordinates[0]
-        const properties = feature.properties
-        setSelectedFeature({ layer_id: layerId, geometry_type: geomType, properties })
-
-        let popupHTML = `
-          <div style="font-family: system-ui, sans-serif; max-width: 240px;">
-            <div style="background: #667eea; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-              <strong style="font-size: 14px;">${properties.name || 'Unnamed Route'}</strong>
-            </div>
-            <table style="width: 100%; border-collapse: collapse;">
-        `
-
-        Object.keys(properties).forEach(key => {
-          if (key !== 'name' && key !== 'id' && properties[key]) {
-            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
-            popupHTML += `
-              <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
-                <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
-              </tr>
-            `
-          }
+        const properties = feature.properties || {}
+        setSelectedFeature({
+          layer_id: layerId,
+          layer_name: layerMeta.name,
+          geometry_type: geomType,
+          properties,
         })
-
-        popupHTML += '</table></div>'
-        mapRef.current.showPopup(coordinates, popupHTML)
-      })
-    } else if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
-      mapRef.current.addLayer({
-        id: `layer-${layerId}-fill`,
-        type: 'fill',
-        source: `layer-${layerId}`,
-        paint: {
-          'fill-color': '#34a853',
-          'fill-opacity': 0.3
+        const coordinates = getFeatureAnchor(feature)
+        if (coordinates) {
+          mapRef.current.showPopup(coordinates, buildFeaturePopupHTML({ properties, accent: spec.palette.base, layerName: layerMeta.name }))
         }
       })
-      mapRef.current.addLayer({
-        id: `layer-${layerId}-outline`,
-        type: 'line',
-        source: `layer-${layerId}`,
-        paint: {
-          'line-color': '#34a853',
-          'line-width': 2
-        }
-      })
-
-      mapRef.current.addClickHandler(`layer-${layerId}-fill`, (feature) => {
-        const coordinates = feature.geometry.coordinates[0][0]
-        const properties = feature.properties
-        setSelectedFeature({ layer_id: layerId, geometry_type: geomType, properties })
-
-        let popupHTML = `
-          <div style="font-family: system-ui, sans-serif; max-width: 240px;">
-            <div style="background: #f5576c; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-              <strong style="font-size: 14px;">${properties.name || 'Unnamed Area'}</strong>
-            </div>
-            <table style="width: 100%; border-collapse: collapse;">
-        `
-
-        Object.keys(properties).forEach(key => {
-          if (key !== 'name' && key !== 'id' && properties[key]) {
-            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
-            popupHTML += `
-              <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
-                <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
-              </tr>
-            `
-          }
-        })
-
-        popupHTML += '</table></div>'
-        mapRef.current.showPopup(coordinates, popupHTML)
-      })
+      return
     }
+
+    mapRef.current.addLayer({
+      id: `layer-${layerId}-fill`,
+      type: 'fill',
+      source: `layer-${layerId}`,
+      paint: spec.fillPaint,
+    })
+    mapRef.current.addLayer({
+      id: `layer-${layerId}-outline`,
+      type: 'line',
+      source: `layer-${layerId}`,
+      paint: spec.outlinePaint,
+    })
+    mapRef.current.addClickHandler(`layer-${layerId}-fill`, (feature) => {
+      const properties = feature.properties || {}
+      setSelectedFeature({
+        layer_id: layerId,
+        layer_name: layerMeta.name,
+        geometry_type: geomType,
+        properties,
+      })
+      const coordinates = getFeatureAnchor(feature)
+      if (coordinates) {
+        mapRef.current.showPopup(coordinates, buildFeaturePopupHTML({ properties, accent: spec.palette.base, layerName: layerMeta.name }))
+      }
+    })
   }
 
-  const toggleLayer = async (layerId, enabled) => {
+  const toggleLayer = async (layerId, enabled = !enabledLayers.has(layerId)) => {
     const newEnabledLayers = new Set(enabledLayers)
 
     if (enabled) {
@@ -380,7 +325,6 @@ const MapViewerPage = () => {
     const autoEnable = async () => {
       const targetLayerIds = coreLayerIds.length > 0 ? coreLayerIds : layers.slice(0, 4).map((layer) => layer.id)
       for (const layerId of targetLayerIds.slice(0, 5)) {
-        // eslint-disable-next-line no-await-in-loop
         await toggleLayer(layerId, true)
       }
       setHasAutoEnabledLayers(true)
@@ -447,6 +391,8 @@ const MapViewerPage = () => {
             layers={layers}
             enabledLayers={enabledLayers}
             onToggleLayer={toggleLayer}
+            studentView={isStudentView}
+            moduleCode={activeModuleCode}
           />
         )}
         {activePanel === 'lessons' && (
@@ -472,6 +418,29 @@ const MapViewerPage = () => {
           context={aiContext}
           title="AI Tutor Địa lí 10"
         />
+
+        {selectedFeature && (
+          <div className="absolute bottom-24 right-6 z-20 w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{'\u0110\u1ed1i t\u01b0\u1ee3ng \u0111ang ch\u1ecdn'}</p>
+                <h4 className="mt-1 text-sm font-semibold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h4>
+                <p className="mt-1 text-xs text-slate-500">{selectedFeature.layer_name || `Layer ${selectedFeature.layer_id}`}</p>
+              </div>
+              <button onClick={() => setSelectedFeature(null)} className="text-xs font-medium text-slate-500 hover:text-slate-700">{'\u0110\xf3ng'}</button>
+            </div>
+            <div className="mt-3 max-h-48 space-y-2 overflow-y-auto">
+              {Object.entries(selectedFeature.properties || {})
+                .filter(([, value]) => value !== null && value !== undefined && `${value}`.trim() !== '')
+                .map(([key, value]) => (
+                  <div key={key} className="rounded-xl bg-slate-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{key.replace(/_/g, ' ')}</p>
+                    <p className="mt-1 text-sm text-slate-800">{String(value)}</p>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* Quiz Floating Button */}
         <QuizFloatingButton

@@ -1,34 +1,30 @@
 """
-Simple GIS API Views - Không cần MapLayer model
+Simple GIS API Views - Kh?ng c?n MapLayer model
 """
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
 from django.db import connection
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
-# Allowed tables and their category-like column
-TABLE_CATEGORY_COLUMN = {
-    'points_of_interest': 'category',
-    'boundaries': 'type',
-    'routes': 'type',
-    'line_features': 'category',
-    'polygon_features': 'category',
+TABLE_PROPERTY_FIELDS = {
+    'points_of_interest': "'id', id, 'name', name, 'category', COALESCE(category, 'Unknown'), 'description', COALESCE(description, '')",
+    'boundaries': "'id', id, 'name', name, 'category', COALESCE(type, 'Unknown'), 'code', COALESCE(code, ''), 'area_km2', COALESCE(area_km2, 0)",
+    'routes': "'id', id, 'name', name, 'category', COALESCE(type, 'Unknown'), 'length_km', COALESCE(length_km, 0)",
+    'line_features': "'id', id, 'name', name, 'category', COALESCE(category, 'Unknown'), 'description', COALESCE(description, '')",
+    'polygon_features': "'id', id, 'name', name, 'category', COALESCE(category, 'Unknown'), 'description', COALESCE(description, '')",
+    'vietnam_provinces': "'id', id, 'name', name, 'category', COALESCE(region, 'Unknown'), 'code', COALESCE(code, ''), 'population', COALESCE(population, 0), 'area_km2', COALESCE(area_km2, 0)",
 }
 
 
 class SimpleLayerViewSet(viewsets.ViewSet):
     """
-    API endpoint đơn giản để lấy dữ liệu GIS layers
-    Không cần MapLayer model
+    API endpoint ??n gi?n ?? l?y d? li?u GIS layers.
     """
+
     permission_classes = [AllowAny]
 
     def list(self, request):
-        """
-        GET /api/v1/layers/
-        Trả về danh sách các layers từ database với school/grade
-        """
         school = request.query_params.get('school')
         grade = request.query_params.get('grade')
         params = []
@@ -44,110 +40,92 @@ class SimpleLayerViewSet(viewsets.ViewSet):
         where_sql = ' AND '.join(where_clauses)
 
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, name, data_source_table, geom_type, description, is_active,
                        filter_column, filter_value, school, grade
                 FROM map_layers
                 WHERE {where_sql}
                 ORDER BY school, grade, id
-            """.format(where_sql=where_sql), params)
+                """.format(where_sql=where_sql),
+                params,
+            )
 
-            layers = []
-            for row in cursor.fetchall():
-                layers.append({
-                    "id": row[0],
-                    "name": row[1],
-                    "data_source_table": row[2],
-                    "geom_type": row[3],
-                    "description": row[4],
-                    "is_active": row[5],
-                    "filter_column": row[6],
-                    "filter_value": row[7],
-                    "school": row[8],
-                    "grade": row[9]
-                })
+            layers = [
+                {
+                    'id': row[0],
+                    'name': row[1],
+                    'data_source_table': row[2],
+                    'geom_type': row[3],
+                    'description': row[4],
+                    'is_active': row[5],
+                    'filter_column': row[6],
+                    'filter_value': row[7],
+                    'school': row[8],
+                    'grade': row[9],
+                }
+                for row in cursor.fetchall()
+            ]
 
-        return Response({"results": layers})
+        return Response({'results': layers})
 
     def retrieve(self, request, pk=None):
-        """
-        GET /api/v1/layers/{id}/
-        Trả về chi tiết 1 layer từ database với school/grade
-        """
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, name, data_source_table, geom_type, description, is_active,
                        filter_column, filter_value, school, grade
                 FROM map_layers
                 WHERE id = %s
-            """, [pk])
-
+                """,
+                [pk],
+            )
             row = cursor.fetchone()
-            if not row:
-                return Response(
-                    {"error": "Layer not found"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
 
-            layer = {
-                "id": row[0],
-                "name": row[1],
-                "data_source_table": row[2],
-                "geom_type": row[3],
-                "description": row[4],
-                "is_active": row[5],
-                "filter_column": row[6],
-                "filter_value": row[7],
-                "school": row[8],
-                "grade": row[9]
+        if not row:
+            return Response({'error': 'Layer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(
+            {
+                'id': row[0],
+                'name': row[1],
+                'data_source_table': row[2],
+                'geom_type': row[3],
+                'description': row[4],
+                'is_active': row[5],
+                'filter_column': row[6],
+                'filter_value': row[7],
+                'school': row[8],
+                'grade': row[9],
             }
-
-        return Response(layer)
+        )
 
     @action(detail=True, methods=['get'], url_path='features')
     def features(self, request, pk=None):
-        """
-        GET /api/v1/layers/{id}/features/
-        Trả về GeoJSON features của layer với filter hỗ trợ
-        """
-        # Lấy thông tin layer từ database
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT data_source_table, filter_column, filter_value
                 FROM map_layers
                 WHERE id = %s
-            """, [pk])
-
-            layer_info = cursor.fetchone()
-            if not layer_info:
-                return Response(
-                    {"error": "Layer not found"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            table_name = layer_info[0]
-            filter_column = layer_info[1]
-            filter_value = layer_info[2]
-
-        # Validate table name against whitelist
-        if table_name not in TABLE_CATEGORY_COLUMN:
-            return Response(
-                {"error": f"Unsupported table: {table_name}"},
-                status=status.HTTP_400_BAD_REQUEST
+                """,
+                [pk],
             )
+            layer_info = cursor.fetchone()
 
-        # Determine the category-like column for this table
-        cat_column = TABLE_CATEGORY_COLUMN[table_name]
+        if not layer_info:
+            return Response({'error': 'Layer not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Xây dựng WHERE clause cho filter
-        where_clause = "WHERE geometry IS NOT NULL"
+        table_name, filter_column, filter_value = layer_info
+        if table_name not in TABLE_PROPERTY_FIELDS:
+            return Response({'error': f'Unsupported table: {table_name}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        where_clause = 'WHERE geometry IS NOT NULL'
         params = []
-
         if filter_column and filter_value:
-            where_clause += f" AND {filter_column} = %s"
+            where_clause += f' AND {filter_column} = %s'
             params.append(filter_value)
 
-        # Lấy dữ liệu từ database
         with connection.cursor() as cursor:
             query = f"""
                 SELECT json_build_object(
@@ -156,32 +134,21 @@ class SimpleLayerViewSet(viewsets.ViewSet):
                         json_build_object(
                             'type', 'Feature',
                             'id', id,
-                            'properties', json_build_object(
-                                'id', id,
-                                'name', name,
-                                'category', COALESCE({cat_column}, 'Unknown')
-                            ),
+                            'properties', json_build_object({TABLE_PROPERTY_FIELDS[table_name]}),
                             'geometry', ST_AsGeoJSON(geometry)::json
                         )
                     ), '[]'::json)
-                ) as geojson
+                ) AS geojson
                 FROM {table_name}
                 {where_clause};
             """
-
             try:
                 cursor.execute(query, params)
                 result = cursor.fetchone()
+            except Exception as exc:
+                return Response({'error': f'Database error: {exc}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                if result and result[0]:
-                    return Response(result[0])
-                else:
-                    return Response({
-                        "type": "FeatureCollection",
-                        "features": []
-                    })
-            except Exception as e:
-                return Response(
-                    {"error": f"Database error: {str(e)}"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+        if result and result[0]:
+            return Response(result[0])
+
+        return Response({'type': 'FeatureCollection', 'features': []})
