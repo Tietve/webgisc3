@@ -1,9 +1,8 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
-import Map, { NavigationControl, ScaleControl, FullscreenControl, GeolocateControl, Popup } from 'react-map-gl'
+import Map, { NavigationControl, ScaleControl, FullscreenControl, GeolocateControl } from 'react-map-gl'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-
-const MAPBOX_TOKEN = 'pk.eyJ1IjoidGhpZW5odXUyMDA1IiwiYSI6ImNtaHQ0dmw5bzB2MnAya3BzdGtxcTFiYjgifQ.EY3a0A0vjNR30dZcsPXvAw'
+import { MAP_CONFIG } from '@constants'
 
 const MapboxMap = forwardRef(({
   initialCenter = [105.8342, 21.0278],
@@ -102,6 +101,17 @@ const MapboxMap = forwardRef(({
       }
     },
 
+    fitBounds: (bounds, options = {}) => {
+      const map = mapRef.current?.getMap()
+      if (!map || !Array.isArray(bounds) || bounds.length !== 2) return
+
+      map.fitBounds(bounds, {
+        padding: options.padding ?? 64,
+        duration: options.duration ?? 1800,
+        maxZoom: options.maxZoom ?? 8,
+      })
+    },
+
     addGeoJSONSource: (sourceId, data) => {
       const map = mapRef.current?.getMap()
       if (!map) return
@@ -198,7 +208,7 @@ const MapboxMap = forwardRef(({
       {...viewState}
       onMove={evt => setViewState(evt.viewState)}
       mapStyle={mapStyle}
-      mapboxAccessToken={MAPBOX_TOKEN}
+      mapboxAccessToken={MAP_CONFIG.MAPBOX_TOKEN}
       style={{ width: '100%', height: '100%' }}
       onLoad={handleMapLoad}
       attributionControl={true}

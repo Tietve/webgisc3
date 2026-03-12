@@ -6,7 +6,7 @@ import gisService from '@services/gis.service'
 import MapboxMap from '@components/map/MapboxMap'
 import AITutorPanel from '@components/ai/AITutorPanel'
 import { getModuleCatalog, matchLayerGuide } from '@features/grade10/data/moduleCatalog'
-import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureDisplayName, getLayerVisualSpec } from '@features/map/utils/layerPresentation'
+import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureBounds, getFeatureDisplayName, getLayerVisualSpec, getLegendVisualMeta } from '@features/map/utils/layerPresentation'
 
 const LessonViewerPage = () => {
   const { id } = useParams()
@@ -56,12 +56,13 @@ const LessonViewerPage = () => {
     mapRef.current.removeClickHandler(`layer-${layerId}`)
     mapRef.current.removeClickHandler(`layer-${layerId}-fill`)
     mapRef.current.removeLayer(`layer-${layerId}`)
+    mapRef.current.removeLayer(`layer-${layerId}-label`)
     mapRef.current.removeLayer(`layer-${layerId}-fill`)
     mapRef.current.removeLayer(`layer-${layerId}-outline`)
     mapRef.current.removeSource(`layer-${layerId}`)
   }, [])
 
-  const addLayerToMap = useCallback((layerId, featuresData) => {
+  const addLayerToMap = useCallback((layerId, featuresData, options = {}) => {
     if (!mapRef.current || !featuresData.features || featuresData.features.length === 0) return
 
     const layerMeta = (lesson?.layers || []).find((item) => item.id === layerId) || {}
@@ -90,13 +91,17 @@ const LessonViewerPage = () => {
         id: `layer-${layerId}`,
         type: 'circle',
         source: `layer-${layerId}`,
-        paint: spec.paint,
+        paint: spec.circlePaint,
+      })
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-label`,
+        type: 'symbol',
+        source: `layer-${layerId}`,
+        layout: spec.labelLayout,
+        paint: spec.labelPaint,
       })
       mapRef.current.addClickHandler(`layer-${layerId}`, handleFeatureClick)
-      return
-    }
-
-    if (geomType === 'LineString' || geomType === 'MultiLineString') {
+    } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
       mapRef.current.addLayer({
         id: `layer-${layerId}`,
         type: 'line',
@@ -104,28 +109,33 @@ const LessonViewerPage = () => {
         paint: spec.paint,
       })
       mapRef.current.addClickHandler(`layer-${layerId}`, handleFeatureClick)
-      return
+    } else {
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-fill`,
+        type: 'fill',
+        source: `layer-${layerId}`,
+        paint: spec.fillPaint,
+      })
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-outline`,
+        type: 'line',
+        source: `layer-${layerId}`,
+        paint: spec.outlinePaint,
+      })
+      mapRef.current.addClickHandler(`layer-${layerId}-fill`, handleFeatureClick)
     }
 
-    mapRef.current.addLayer({
-      id: `layer-${layerId}-fill`,
-      type: 'fill',
-      source: `layer-${layerId}`,
-      paint: spec.fillPaint,
-    })
-    mapRef.current.addLayer({
-      id: `layer-${layerId}-outline`,
-      type: 'line',
-      source: `layer-${layerId}`,
-      paint: spec.outlinePaint,
-    })
-    mapRef.current.addClickHandler(`layer-${layerId}-fill`, handleFeatureClick)
+    const bounds = getFeatureBounds(featuresData)
+    if (options.fitBounds && bounds) {
+      mapRef.current.fitBounds(bounds, { padding: 72, maxZoom: options.maxZoom ?? 7 })
+    }
   }, [lesson])
 
   const executeMapAction = useCallback(async (mapAction) => {
     if (!mapAction || !mapRef.current) return
 
-    const { payload } = mapAction
+    const { payload = {} } = mapAction
+    const layerCollections = []
 
     // Handle layers_off
     if (payload.layers_off === 'all') {
@@ -141,11 +151,15 @@ const LessonViewerPage = () => {
     // Handle layers_on
     if (Array.isArray(payload.layers_on)) {
       for (const lid of payload.layers_on) {
-        if (activeLayers.current.has(lid)) continue
         try {
           const featuresData = await gisService.getFeatures(lid)
-          if (featuresData.features) {
-            addLayerToMap(lid, featuresData)
+          if (featuresData?.features?.length) {
+            layerCollections.push(featuresData)
+
+            if (!activeLayers.current.has(lid)) {
+              addLayerToMap(lid, featuresData)
+            }
+
             activeLayers.current.add(lid)
           }
         } catch (err) {
@@ -154,8 +168,19 @@ const LessonViewerPage = () => {
       }
     }
 
+    if (payload.fit_to_layers && layerCollections.length > 0) {
+      const mergedCollection = {
+        type: 'FeatureCollection',
+        features: layerCollections.flatMap((collection) => collection.features || []),
+      }
+      const bounds = getFeatureBounds(mergedCollection)
+      if (bounds) {
+        mapRef.current.fitBounds(bounds, { padding: 72, maxZoom: payload.zoom ?? 7 })
+      }
+    }
+
     // Handle flyTo
-    if (mapAction.action_type === 'flyTo' && payload.center) {
+    if (mapAction.action_type === 'flyTo' && payload.center && !payload.fit_to_layers) {
       const map = mapRef.current.getMap()
       if (map) {
         map.flyTo({
@@ -246,9 +271,12 @@ const LessonViewerPage = () => {
   const isAiSupported = lesson.grade_level === '10' && lesson.semester === '1' && lesson.textbook_series === 'canh-dieu'
   const relatedLayers = (lesson.layers || []).slice(0, 5)
   const moduleMeta = getModuleCatalog(lesson.module_code)
+  const activeStepLayerIds = new Set(step?.map_action?.payload?.layers_on || [])
   const guidedLayers = relatedLayers.map((layer) => ({
     ...layer,
     guide: matchLayerGuide(lesson.module_code, layer.name),
+    visualMeta: getLegendVisualMeta({ layerName: layer.name, geomType: layer.geom_type || layer.layer_type }),
+    isActiveForStep: activeStepLayerIds.has(layer.id),
   }))
   const map = mapRef.current?.getMap?.()
   const aiContext = {
@@ -380,9 +408,50 @@ const LessonViewerPage = () => {
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Layer quan sát chính</p>
                     <div className="mt-3 space-y-3">
                       {guidedLayers.map((layer) => (
-                        <div key={layer.id} className="rounded-2xl bg-white px-3 py-3 shadow-sm">
-                          <p className="text-sm font-semibold text-emerald-900">{layer.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-slate-600">{layer.guide?.purpose || layer.description || 'Dùng để quan sát mối liên hệ với nội dung bài học.'}</p>
+                        <div
+                          key={layer.id}
+                          className={`rounded-2xl border px-3 py-3 shadow-sm transition ${layer.isActiveForStep ? 'border-emerald-200 bg-white ring-2 ring-emerald-100' : 'border-slate-200 bg-white/90'}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-11 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+                              {layer.visualMeta.preview === 'line' ? (
+                                <div className="h-1.5 w-10 rounded-full" style={{ backgroundColor: layer.visualMeta.palette.base }} />
+                              ) : layer.visualMeta.preview === 'polygon' ? (
+                                <div
+                                  className="h-6 w-9 rounded-md border-2"
+                                  style={{ backgroundColor: layer.visualMeta.palette.soft, borderColor: layer.visualMeta.palette.dark }}
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center">
+                                  <span
+                                    className="h-3.5 w-3.5 rounded-full border-2 border-white shadow-sm"
+                                    style={{ backgroundColor: layer.visualMeta.palette.base }}
+                                  />
+                                  <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">Nhãn</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-emerald-950">{layer.name}</p>
+                                <span
+                                  className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-slate-700"
+                                  style={{ backgroundColor: layer.visualMeta.palette.soft }}
+                                >
+                                  {layer.visualMeta.label}
+                                </span>
+                                {layer.isActiveForStep && (
+                                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                                    Đang bật ở bước này
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-1 text-xs leading-5 text-slate-600">
+                                {layer.guide?.purpose || layer.description || 'Dùng để quan sát mối liên hệ với nội dung bài học.'}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

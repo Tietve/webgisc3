@@ -17,7 +17,7 @@ import gisService from '@services/gis.service'
 import quizService from '@services/quiz.service'
 import lessonService from '@services/lesson.service'
 import { getModuleCatalog, matchLayerGuide } from '@features/grade10/data/moduleCatalog'
-import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureDisplayName, getLayerVisualSpec } from '@features/map/utils/layerPresentation'
+import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureBounds, getFeatureDisplayName, getLayerVisualSpec, getLegendVisualMeta } from '@features/map/utils/layerPresentation'
 
 const MapViewerPage = () => {
   const { user, logout } = useAuth()
@@ -157,7 +157,7 @@ const MapViewerPage = () => {
   }
 
   // Helper: add a GeoJSON layer to the map based on geometry type
-  const addLayerToMap = (layerId, featuresData) => {
+  const addLayerToMap = (layerId, featuresData, options = {}) => {
     if (!mapRef.current || !featuresData.features || featuresData.features.length === 0) return
 
     const layerMeta = layers.find((item) => item.id === layerId) || {}
@@ -167,65 +167,7 @@ const MapViewerPage = () => {
 
     mapRef.current.addGeoJSONSource(`layer-${layerId}`, featuresData)
 
-    if (geomType === 'Point' || geomType === 'MultiPoint') {
-      mapRef.current.addLayer({
-        id: `layer-${layerId}`,
-        type: 'circle',
-        source: `layer-${layerId}`,
-        paint: spec.paint,
-      })
-      mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
-        const properties = feature.properties || {}
-        setSelectedFeature({
-          layer_id: layerId,
-          layer_name: layerMeta.name,
-          geometry_type: geomType,
-          properties,
-        })
-        const coordinates = getFeatureAnchor(feature)
-        if (coordinates) {
-          mapRef.current.showPopup(coordinates, buildFeaturePopupHTML({ properties, accent: spec.palette.base, layerName: layerMeta.name }))
-        }
-      })
-      return
-    }
-
-    if (geomType === 'LineString' || geomType === 'MultiLineString') {
-      mapRef.current.addLayer({
-        id: `layer-${layerId}`,
-        type: 'line',
-        source: `layer-${layerId}`,
-        paint: spec.paint,
-      })
-      mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
-        const properties = feature.properties || {}
-        setSelectedFeature({
-          layer_id: layerId,
-          layer_name: layerMeta.name,
-          geometry_type: geomType,
-          properties,
-        })
-        const coordinates = getFeatureAnchor(feature)
-        if (coordinates) {
-          mapRef.current.showPopup(coordinates, buildFeaturePopupHTML({ properties, accent: spec.palette.base, layerName: layerMeta.name }))
-        }
-      })
-      return
-    }
-
-    mapRef.current.addLayer({
-      id: `layer-${layerId}-fill`,
-      type: 'fill',
-      source: `layer-${layerId}`,
-      paint: spec.fillPaint,
-    })
-    mapRef.current.addLayer({
-      id: `layer-${layerId}-outline`,
-      type: 'line',
-      source: `layer-${layerId}`,
-      paint: spec.outlinePaint,
-    })
-    mapRef.current.addClickHandler(`layer-${layerId}-fill`, (feature) => {
+    const openFeature = (feature) => {
       const properties = feature.properties || {}
       setSelectedFeature({
         layer_id: layerId,
@@ -237,23 +179,88 @@ const MapViewerPage = () => {
       if (coordinates) {
         mapRef.current.showPopup(coordinates, buildFeaturePopupHTML({ properties, accent: spec.palette.base, layerName: layerMeta.name }))
       }
-    })
+    }
+
+    if (geomType === 'Point' || geomType === 'MultiPoint') {
+      mapRef.current.addLayer({
+        id: `layer-${layerId}`,
+        type: 'circle',
+        source: `layer-${layerId}`,
+        paint: spec.circlePaint,
+      })
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-label`,
+        type: 'symbol',
+        source: `layer-${layerId}`,
+        layout: spec.labelLayout,
+        paint: spec.labelPaint,
+      })
+      mapRef.current.addClickHandler(`layer-${layerId}`, openFeature)
+    } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
+      mapRef.current.addLayer({
+        id: `layer-${layerId}`,
+        type: 'line',
+        source: `layer-${layerId}`,
+        paint: spec.paint,
+      })
+      mapRef.current.addClickHandler(`layer-${layerId}`, openFeature)
+    } else {
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-fill`,
+        type: 'fill',
+        source: `layer-${layerId}`,
+        paint: spec.fillPaint,
+      })
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-outline`,
+        type: 'line',
+        source: `layer-${layerId}`,
+        paint: spec.outlinePaint,
+      })
+      mapRef.current.addClickHandler(`layer-${layerId}-fill`, openFeature)
+    }
+
+    const bounds = getFeatureBounds(featuresData)
+    if (options.fitBounds && bounds) {
+      mapRef.current.fitBounds(bounds, { padding: 72, maxZoom: options.maxZoom ?? 7 })
+    }
   }
 
-  const toggleLayer = async (layerId, enabled = !enabledLayers.has(layerId)) => {
+  const fitMapToLayerIds = (layerIds = []) => {
+    if (!mapRef.current) return
+
+    const boundsList = layerIds
+      .map((layerId) => getFeatureBounds(loadedGeoJSONRef.current[layerId]))
+      .filter(Boolean)
+
+    if (boundsList.length === 0) return
+
+    const merged = boundsList.reduce((acc, bounds) => {
+      if (!acc) return [...bounds]
+      return [
+        [Math.min(acc[0][0], bounds[0][0]), Math.min(acc[0][1], bounds[0][1])],
+        [Math.max(acc[1][0], bounds[1][0]), Math.max(acc[1][1], bounds[1][1])],
+      ]
+    }, null)
+
+    if (merged) {
+      mapRef.current.fitBounds(merged, { padding: 72, maxZoom: 7 })
+    }
+  }
+
+  const toggleLayer = async (layerId, enabled = !enabledLayers.has(layerId), options = {}) => {
+    const { fitBounds = isStudentView } = options
     const newEnabledLayers = new Set(enabledLayers)
 
     if (enabled) {
       newEnabledLayers.add(layerId)
 
-      // Load layer features from backend
       try {
         const featuresData = await gisService.getFeatures(layerId)
 
         if (featuresData.features) {
-          // Cache GeoJSON data for re-adding after style changes
           loadedGeoJSONRef.current[layerId] = featuresData
-          addLayerToMap(layerId, featuresData)
+          addLayerToMap(layerId, featuresData, { fitBounds })
         }
       } catch (error) {
         console.error(`Failed to load layer ${layerId}:`, error)
@@ -261,15 +268,13 @@ const MapViewerPage = () => {
     } else {
       newEnabledLayers.delete(layerId)
       setSelectedFeature((current) => (current?.layer_id === layerId ? null : current))
-
-      // Clean up cached data
       delete loadedGeoJSONRef.current[layerId]
 
-      // Remove click handlers and layers from map
       if (mapRef.current) {
         mapRef.current.removeClickHandler(`layer-${layerId}`)
         mapRef.current.removeClickHandler(`layer-${layerId}-fill`)
         mapRef.current.removeLayer(`layer-${layerId}`)
+        mapRef.current.removeLayer(`layer-${layerId}-label`)
         mapRef.current.removeLayer(`layer-${layerId}-fill`)
         mapRef.current.removeLayer(`layer-${layerId}-outline`)
         mapRef.current.removeSource(`layer-${layerId}`)
@@ -324,9 +329,13 @@ const MapViewerPage = () => {
 
     const autoEnable = async () => {
       const targetLayerIds = coreLayerIds.length > 0 ? coreLayerIds : layers.slice(0, 4).map((layer) => layer.id)
-      for (const layerId of targetLayerIds.slice(0, 5)) {
-        await toggleLayer(layerId, true)
+      const selectedIds = targetLayerIds.slice(0, 5)
+
+      for (const layerId of selectedIds) {
+        await toggleLayer(layerId, true, { fitBounds: false })
       }
+
+      fitMapToLayerIds(selectedIds)
       setHasAutoEnabledLayers(true)
     }
 
@@ -419,28 +428,47 @@ const MapViewerPage = () => {
           title="AI Tutor Địa lí 10"
         />
 
-        {selectedFeature && (
-          <div className="absolute bottom-24 right-6 z-20 w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{'\u0110\u1ed1i t\u01b0\u1ee3ng \u0111ang ch\u1ecdn'}</p>
-                <h4 className="mt-1 text-sm font-semibold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h4>
-                <p className="mt-1 text-xs text-slate-500">{selectedFeature.layer_name || `Layer ${selectedFeature.layer_id}`}</p>
+        {selectedFeature && (() => {
+          const popupMeta = getLegendVisualMeta({
+            layerName: selectedFeature.layer_name,
+            geomType: selectedFeature.geometry_type,
+          })
+          const popupRows = Object.entries(selectedFeature.properties || {})
+            .filter(([, value]) => value !== null && value !== undefined && `${value}`.trim() !== '')
+            .filter(([key]) => ['category', 'description', 'code', 'population', 'area_km2', 'length_km'].includes(key))
+            .slice(0, 4)
+
+          return (
+            <div className="absolute bottom-24 right-6 z-20 w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{'Đối tượng đang chọn'}</p>
+                  <h4 className="mt-1 text-sm font-semibold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h4>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-slate-700" style={{ backgroundColor: popupMeta.palette.soft }}>
+                      {popupMeta.label}
+                    </span>
+                    <span className="text-xs text-slate-500">{selectedFeature.layer_name || `Layer ${selectedFeature.layer_id}`}</span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedFeature(null)} className="text-xs font-medium text-slate-500 hover:text-slate-700">{'Đóng'}</button>
               </div>
-              <button onClick={() => setSelectedFeature(null)} className="text-xs font-medium text-slate-500 hover:text-slate-700">{'\u0110\xf3ng'}</button>
-            </div>
-            <div className="mt-3 max-h-48 space-y-2 overflow-y-auto">
-              {Object.entries(selectedFeature.properties || {})
-                .filter(([, value]) => value !== null && value !== undefined && `${value}`.trim() !== '')
-                .map(([key, value]) => (
+              <div className="mt-3 max-h-48 space-y-2 overflow-y-auto">
+                {popupRows.map(([key, value]) => (
                   <div key={key} className="rounded-xl bg-slate-50 px-3 py-2">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{key.replace(/_/g, ' ')}</p>
                     <p className="mt-1 text-sm text-slate-800">{String(value)}</p>
                   </div>
                 ))}
+                {popupRows.length === 0 && (
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    H?y quan s?t v? tr?, k? hi?u v? ph?m vi ph?n b? c?a l?p n?y tr?n b?n ??.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Quiz Floating Button */}
         <QuizFloatingButton

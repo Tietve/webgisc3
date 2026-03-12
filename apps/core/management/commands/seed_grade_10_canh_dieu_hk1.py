@@ -364,10 +364,13 @@ class Command(BaseCommand):
         lesson.steps.all().delete()
         MapAction.objects.filter(id__in=action_ids).delete()
         zoom_boost = 0.8 if lesson_type == 'practice' else 0
+        intro_layer_ids = [layer.id for layer in layers[:min(4, len(layers))]]
+        focus_layer_ids = [layer.id for layer in layers[:min(2, len(layers))]]
+        all_layer_ids = [layer.id for layer in layers]
         actions = [
-            MapAction.objects.create(action_type='flyTo', payload={'center': module['center'], 'zoom': module['zoom'], 'layers_off': 'all'}),
-            MapAction.objects.create(action_type='flyTo', payload={'center': module['center'], 'zoom': module['zoom'], 'layers_on': [layer.id for layer in layers[:2]]}),
-            MapAction.objects.create(action_type='flyTo', payload={'center': module['center'], 'zoom': module['zoom'] + zoom_boost, 'layers_on': [layer.id for layer in layers]}),
+            MapAction.objects.create(action_type='flyTo', payload={'center': module['center'], 'zoom': module['zoom'], 'layers_off': 'all', 'layers_on': intro_layer_ids, 'fit_to_layers': True}),
+            MapAction.objects.create(action_type='flyTo', payload={'center': module['center'], 'zoom': module['zoom'], 'layers_off': 'all', 'layers_on': focus_layer_ids or intro_layer_ids, 'fit_to_layers': True}),
+            MapAction.objects.create(action_type='flyTo', payload={'center': module['center'], 'zoom': module['zoom'] + zoom_boost, 'layers_off': 'all', 'layers_on': all_layer_ids, 'fit_to_layers': True}),
         ]
         texts = module['steps'].copy()
         if lesson_type == 'practice':
