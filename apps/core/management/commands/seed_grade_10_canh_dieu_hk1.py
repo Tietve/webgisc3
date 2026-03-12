@@ -226,7 +226,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Seeded curated grade 10 HK1 content with 6 modules.'))
 
     def get_demo_teacher(self):
-        teacher = User.objects.filter(role='teacher').order_by('id').first()
+        teacher = User.objects.filter(email='teacher01@webgis.com').first()
+        if not teacher:
+            teacher = User.objects.filter(role='teacher').order_by('id').first()
         if not teacher:
             raise RuntimeError('No teacher account found. Create a teacher before seeding HK1 content.')
         return teacher
