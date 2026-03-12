@@ -43,6 +43,7 @@ LOCAL_APPS = [
     'apps.lessons',
     'apps.gis_data',
     'apps.quizzes',
+    'apps.ai_tutor',
     'apps.tools',
     'apps.core',
 ]
@@ -194,6 +195,14 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': r'/api/v1',
 }
+
+
+# AI Tutor configuration
+AI_TUTOR_BASE_URL = os.environ.get('AI_TUTOR_BASE_URL', 'http://72.62.127.109:20128/v1')
+AI_TUTOR_API_KEY = os.environ.get('AI_TUTOR_API_KEY', '')
+AI_TUTOR_MODEL = os.environ.get('AI_TUTOR_MODEL', 'firlaw')
+AI_TUTOR_PROVIDER_NAME = os.environ.get('AI_TUTOR_PROVIDER_NAME', 'openai-compatible')
+AI_TUTOR_TIMEOUT = int(os.environ.get('AI_TUTOR_TIMEOUT', '30'))
 
 
 # Logging Configuration

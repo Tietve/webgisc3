@@ -5,6 +5,13 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL ||
   (import.meta.env.MODE === 'production' ? '/api/v1' : 'http://localhost:8080/api/v1')
 
 // API Endpoints
+export const AI_TUTOR_ENDPOINTS = {
+  RESPOND: '/ai-tutor/respond/',
+  CONVERSATIONS: '/ai-tutor/conversations/',
+  CONVERSATION_DETAIL: (id) => `/ai-tutor/conversations/${id}/`,
+  FEEDBACK: (id) => `/ai-tutor/messages/${id}/feedback/`,
+}
+
 export const ENDPOINTS = {
   // Authentication
   AUTH: {
@@ -66,6 +73,9 @@ export const ENDPOINTS = {
     LAYER_DETAIL: (id) => `/layers/${id}/`,
     FEATURES: (id) => `/layers/${id}/features/`,
   },
+
+  // AI Tutor
+  AI_TUTOR: AI_TUTOR_ENDPOINTS,
 
   // Tools
   TOOLS: {

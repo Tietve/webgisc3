@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { Bot, Loader2, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react'
 import { aiTutorService } from '@services'
 
@@ -15,9 +16,6 @@ const EMPTY_CONTEXT = {
   textbook_series: '',
 }
 
-const QUICK_HINT_TITLE = '\u0047\u1ee3i \u00fd nhanh'
-const QUICK_HINT_BODY = 'H\u00e3y h\u1ecfi v\u1ec1 l\u1edbp b\u1ea3n \u0111\u1ed3, thao t\u00e1c \u1edf b\u01b0\u1edbc hi\u1ec7n t\u1ea1i ho\u1eb7c l\u00fd do \u0111\u00e1p \u00e1n quiz \u0111\u00fang/sai.'
-
 const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => {
   const safeContext = useMemo(() => ({ ...EMPTY_CONTEXT, ...(context || {}) }), [context])
   const [input, setInput] = useState('')
@@ -32,17 +30,37 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
       quizId: safeContext.quiz_id,
       classroomId: safeContext.classroom_id,
       moduleCode: safeContext.module_code,
+      gradeLevel: safeContext.grade_level,
+      semester: safeContext.semester,
+      textbookSeries: safeContext.textbook_series,
     }),
     [safeContext]
   )
 
   const quickPrompts = useMemo(() => {
     const prompts = []
-    if (safeContext.lesson_id) prompts.push('Gi\u1ea3i th\u00edch b\u00e0i n\u00e0y')
-    if (safeContext.active_layers?.length) prompts.push('Gi\u1ea3i th\u00edch b\u1ea3n \u0111\u1ed3 \u0111ang xem')
-    if (typeof safeContext.lesson_step === 'number') prompts.push('H\u1ecfi v\u1ec1 b\u01b0\u1edbc n\u00e0y')
-    if (safeContext.quiz_id && safeContext.question_context?.length) prompts.push('Gi\u00fap em hi\u1ec3u c\u00e2u sai')
+    if (safeContext.lesson_id) prompts.push('Giải thích bài này')
+    if (safeContext.active_layers?.length) prompts.push('Giải thích bản đồ đang xem')
+    if (typeof safeContext.lesson_step === 'number') prompts.push('Hỏi về bước này')
+    if (safeContext.quiz_id && safeContext.question_context?.length) prompts.push('Giúp em hiểu câu sai')
+    if (!safeContext.lesson_id && safeContext.module_code) prompts.push('Tóm tắt module này')
+    if (!safeContext.lesson_id && !safeContext.module_code && safeContext.grade_level && safeContext.semester && safeContext.textbook_series) {
+      prompts.push('Ôn tập học kì 1')
+    }
     return prompts
+  }, [safeContext])
+
+  const placeholder = useMemo(() => {
+    if (safeContext.lesson_id) return 'Ví dụ: Tóm tắt bài này giúp em thật dễ hiểu'
+    if (safeContext.module_code) return 'Ví dụ: Module này có những ý chính nào?'
+    if (safeContext.active_layers?.length) return 'Ví dụ: Bản đồ này đang thể hiện điều gì?'
+    return 'Ví dụ: Giúp em ôn tập phần Địa lí 10 học kì 1'
+  }, [safeContext])
+
+  const quickHintBody = useMemo(() => {
+    if (safeContext.lesson_id) return 'Em có thể hỏi về bài học, bước hiện tại, bản đồ liên quan, hoặc câu quiz vừa làm.'
+    if (safeContext.module_code) return 'Em có thể yêu cầu AI tóm tắt module, chỉ ra ý chính, hoặc gợi ý cách học nhanh.'
+    return 'Em có thể hỏi về bản đồ đang xem, phần kiến thức đang học, hoặc yêu cầu ôn tập học kì 1.'
   }, [safeContext])
 
   useEffect(() => {
@@ -104,7 +122,7 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
         },
       ])
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Kh\u00f4ng th\u1ec3 k\u1ebft n\u1ed1i AI Tutor')
+      setError(err.response?.data?.detail || err.message || 'Không thể kết nối AI Tutor')
       setMessages((prev) => prev.filter((item) => item.id !== optimistic.id))
     } finally {
       setLoading(false)
@@ -120,8 +138,8 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
   }
 
   const contextSummary = safeContext.grade_level
-    ? `L\u1edbp ${safeContext.grade_level} \u2022 HK${safeContext.semester} \u2022 C\u00e1nh Di\u1ec1u${safeContext.module_code ? ` \u2022 ${safeContext.module_code}` : ''}`
-    : 'Tr\u1ee3 l\u00fd h\u1ecdc t\u1eadp WebGIS'
+    ? `Lớp ${safeContext.grade_level} • HK${safeContext.semester} • Cánh Diều${safeContext.module_code ? ` • ${safeContext.module_code}` : ''}`
+    : 'Trợ lý học tập WebGIS'
 
   return (
     <div className="fixed inset-y-0 right-0 z-[1100] flex w-full max-w-md flex-col border-l border-gray-200 bg-white shadow-2xl">
@@ -133,7 +151,7 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
             <p className="truncate text-xs text-blue-100">{contextSummary}</p>
           </div>
         </div>
-        <button onClick={onClose} className="rounded p-1 transition-colors hover:bg-white/10" aria-label={'\u0110\u00f3ng AI Tutor'}>
+        <button onClick={onClose} className="rounded p-1 transition-colors hover:bg-white/10" aria-label={'Đóng AI Tutor'}>
           <X className="h-5 w-5" />
         </button>
       </div>
@@ -154,24 +172,32 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
       <div className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-white to-slate-50 px-4 py-4">
         {messages.length === 0 && (
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-            <p className="font-semibold">{QUICK_HINT_TITLE}</p>
-            <p className="mt-1 text-blue-800">{QUICK_HINT_BODY}</p>
+            <p className="font-semibold">Gợi ý nhanh</p>
+            <p className="mt-1 text-blue-800">{quickHintBody}</p>
           </div>
         )}
 
         {messages.map((message) => (
           <div key={message.id} className={`rounded-2xl px-4 py-3 shadow-sm ${message.role === 'assistant' ? 'border border-blue-100 bg-white text-gray-800' : 'ml-8 bg-blue-600 text-white'}`}>
-            <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
+            {message.role === 'assistant' ? (
+              <div className="prose prose-sm max-w-none text-sm leading-6 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1 prose-strong:text-slate-900 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5">
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
+            )}
+
             {message.role === 'assistant' && (
               <div className="mt-3 flex items-center gap-2 text-gray-500">
-                <button onClick={() => sendFeedback(message.id, 1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'H\u1eefu \u00edch'}>
+                <button onClick={() => sendFeedback(message.id, 1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'Hữu ích'}>
                   <ThumbsUp className="h-4 w-4" />
                 </button>
-                <button onClick={() => sendFeedback(message.id, -1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'Ch\u01b0a h\u1eefu \u00edch'}>
+                <button onClick={() => sendFeedback(message.id, -1)} className="rounded-full border border-gray-200 p-1.5 hover:bg-gray-50" aria-label={'Chưa hữu ích'}>
                   <ThumbsDown className="h-4 w-4" />
                 </button>
               </div>
             )}
+
             {message.followups?.length ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {message.followups.map((followup) => (
@@ -191,7 +217,7 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
         {loading && (
           <div className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
             <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-            {'AI \u0111ang suy ngh\u0129...'}
+            {'AI đang suy nghĩ...'}
           </div>
         )}
 
@@ -203,7 +229,7 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder={'V\u00ed d\u1ee5: Gi\u1ea3i th\u00edch v\u00ec sao l\u1edbp n\u00e0y quan tr\u1ecdng trong b\u00e0i h\u1ecdc'}
+            placeholder={placeholder}
             rows={3}
             className="min-h-[88px] flex-1 resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none ring-0 transition focus:border-blue-400"
           />
@@ -211,7 +237,7 @@ const AITutorPanel = ({ isOpen, onClose, context = {}, title = 'AI Tutor' }) => 
             onClick={() => sendMessage(input)}
             disabled={loading || !input.trim()}
             className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-            aria-label={'G\u1eedi tin nh\u1eafn'}
+            aria-label={'Gửi tin nhắn'}
           >
             <Send className="h-5 w-5" />
           </button>

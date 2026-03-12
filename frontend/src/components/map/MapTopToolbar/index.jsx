@@ -1,12 +1,18 @@
-import React from 'react'
-
-const MapTopToolbar = ({ activePanel, onTogglePanel }) => {
-  const toolbarButtons = [
-    { id: 'tools', icon: '🛠️', label: 'Tools', title: 'Công cụ vẽ & phân tích' },
-    { id: 'layers', icon: '🗺️', label: 'Layers', title: 'Lớp bản đồ' },
-    { id: 'lessons', icon: '📚', label: 'Lessons', title: 'Bài học tương tác' },
-    { id: 'assignments', icon: '📝', label: 'Assignments', title: 'Bài tập & nộp bài' },
-  ]
+const MapTopToolbar = ({ activePanel, onTogglePanel, compact = false }) => {
+  const toolbarButtons = compact
+    ? [
+        { id: 'layers', icon: '🗺️', label: 'Layers', title: 'Lớp bản đồ' },
+        { id: 'lessons', icon: '📚', label: 'Lessons', title: 'Bài học tương tác' },
+        { id: 'ai', icon: '🤖', label: 'AI', title: 'AI Tutor cho học sinh' },
+        { id: 'assignments', icon: '📝', label: 'Assignments', title: 'Bài được giao' },
+      ]
+    : [
+        { id: 'tools', icon: '🛠️', label: 'Tools', title: 'Công cụ vẽ & phân tích' },
+        { id: 'layers', icon: '🗺️', label: 'Layers', title: 'Lớp bản đồ' },
+        { id: 'lessons', icon: '📚', label: 'Lessons', title: 'Bài học tương tác' },
+        { id: 'ai', icon: '🤖', label: 'AI Tutor', title: 'AI Tutor cho học sinh' },
+        { id: 'assignments', icon: '📝', label: 'Assignments', title: 'Bài tập & nộp bài' },
+      ]
 
   return (
     <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[1000]">

@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.ai_tutor.models import AiConversation, AiMessage, AiMessageFeedback
+from apps.ai_tutor.services import normalize_assistant_message
 from apps.classrooms.models import Classroom
 from apps.gis_data.models import MapLayer
 from apps.lessons.models import Lesson, LessonStep
@@ -174,3 +175,13 @@ class AiTutorApiTests(APITestCase):
         self.assertEqual(ok.status_code, status.HTTP_200_OK)
         self.assertEqual(rejected.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(AiMessageFeedback.objects.count(), 1)
+
+
+class AiTutorOutputFormattingTests(APITestCase):
+    def test_normalize_assistant_message_removes_excessive_bold(self):
+        raw = '**Bước 1**: xem **lớp** và **chú giải** rồi trả lời.'
+        cleaned = normalize_assistant_message(raw)
+
+        self.assertIn('Bước 1', cleaned)
+        self.assertNotIn('**lớp**', cleaned)
+        self.assertNotIn('**chú giải**', cleaned)

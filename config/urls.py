@@ -20,6 +20,7 @@ urlpatterns = [
         path('classrooms/', include('apps.classrooms.urls')),
         path('lessons/', include('apps.lessons.urls')),
         path('quizzes/', include('apps.quizzes.urls')),
+        path('ai-tutor/', include('apps.ai_tutor.urls')),
         path('layers/', include('apps.gis_data.urls')),
         path('tools/', include('apps.tools.urls')),
     ])),

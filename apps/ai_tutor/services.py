@@ -1,3 +1,5 @@
+import re
+
 from apps.classrooms.models import Classroom
 from apps.gis_data.models import MapLayer
 from apps.lessons.models import Lesson
@@ -236,7 +238,7 @@ def build_prompt(message, used_context):
         'Bạn là trợ giảng Địa lí THPT cho học sinh. '
         'Hiện tại bạn chỉ hỗ trợ lớp 10, học kì 1, bộ Cánh Diều. '
         'Chỉ dùng ngữ cảnh được cung cấp. Không bịa dữ liệu địa lí, bản đồ, lớp học, hay quiz. '
-        'Ưu tiên giải thích ngắn, dễ hiểu, có cấu trúc rõ ràng. '
+        'Ưu tiên giải thích ngắn, dễ hiểu, có cấu trúc rõ ràng, giọng thân thiện như trợ giảng đang hướng dẫn học sinh. '
         'Không đưa đáp án thẳng nếu học sinh đang hỏi bài học hoặc quiz; hãy gợi mở trước. '
         'Nếu thiếu dữ liệu thì nói rõ phần nào đang thiếu. '
         f'{mode_instruction}'
@@ -245,7 +247,8 @@ def build_prompt(message, used_context):
         f'Ngữ cảnh hiện tại: {used_context}\n\n'
         f'Câu hỏi của học sinh: {message}\n\n'
         'Hãy trả lời bằng tiếng Việt, ưu tiên 2-4 đoạn ngắn. '
-        'Chỉ dùng markdown nhẹ: in đậm vừa đủ, gạch đầu dòng khi thật sự hữu ích. '
+        'Chỉ dùng markdown nhẹ: chỉ in đậm tối đa 1-2 cụm thật sự quan trọng, gạch đầu dòng khi thật sự hữu ích. '
+        'Không viết kiểu checklist máy móc nếu không cần. '
         'Không lạm dụng dấu sao. Nếu phù hợp, kết thúc bằng 1 câu hỏi gợi mở để học sinh tự nghĩ tiếp.'
     )
     return [
@@ -283,3 +286,16 @@ def build_followups(used_context):
             'Chọn giúp em 3 bài cần ôn trước',
         ])
     return prompts[:3]
+
+
+def normalize_assistant_message(message):
+    if not message:
+        return ''
+
+    cleaned = message.replace('\r\n', '\n').strip()
+    cleaned = re.sub(r'\*\*([^*\n]{1,40})\*\*', r'__BOLD__\1__END__', cleaned)
+    cleaned = cleaned.replace('**', '')
+    cleaned = cleaned.replace('__BOLD__', '**').replace('__END__', '**')
+    cleaned = re.sub(r'(\*\*[^*\n]{1,40}\*\*){3,}', lambda match: match.group(0).replace('**', ''), cleaned)
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    return cleaned.strip()
