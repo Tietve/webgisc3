@@ -7,9 +7,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.db.models import Count, Q, Prefetch
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from apps.core.permissions import IsStudent, IsTeacher
-from apps.classrooms.models import Classroom
+from apps.classrooms.models import Assignment, Classroom, Enrollment, Submission
 from .models import Quiz, QuizSubmission
 from .serializers import (
     QuizListSerializer,
@@ -34,6 +35,23 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Quiz.objects.all().prefetch_related('questions__answers')
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_published=True).prefetch_related('questions__answers')
+        params = self.request.query_params
+
+        if params.get('grade_level'):
+            queryset = queryset.filter(grade_level=params['grade_level'])
+        if params.get('semester'):
+            queryset = queryset.filter(semester=params['semester'])
+        if params.get('textbook_series'):
+            queryset = queryset.filter(textbook_series=params['textbook_series'])
+        if params.get('module_code'):
+            queryset = queryset.filter(module_code=params['module_code'])
+        if params.get('lesson_id'):
+            queryset = queryset.filter(lesson_id=params['lesson_id'])
+
+        return queryset
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return QuizDetailSerializer
@@ -42,6 +60,13 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(
         summary="List all quizzes",
         description="Get a list of all available quizzes",
+        parameters=[
+            OpenApiParameter(name='grade_level', type=str, required=False),
+            OpenApiParameter(name='semester', type=str, required=False),
+            OpenApiParameter(name='textbook_series', type=str, required=False),
+            OpenApiParameter(name='module_code', type=str, required=False),
+            OpenApiParameter(name='lesson_id', type=int, required=False),
+        ],
         responses={200: QuizListSerializer(many=True)},
         tags=['Quizzes']
     )
@@ -243,6 +268,8 @@ class QuizDeadlineView(APIView):
         classroom_id = request.query_params.get('classroom_id')
 
         # Build base queryset based on user role
+        assignment_items = []
+
         if user.role == 'teacher':
             # Teachers see quizzes from their owned classrooms
             owned_classrooms = Classroom.objects.filter(teacher=user)
@@ -255,9 +282,11 @@ class QuizDeadlineView(APIView):
                 submission_count=Count('submissions'),
                 pending_review_count=Count('submissions', filter=Q(submissions__is_reviewed=False))
             )
+            assignments = Assignment.objects.filter(
+                classroom__in=owned_classrooms,
+            ).select_related('classroom').prefetch_related('submissions')
         else:
             # Students see quizzes from enrolled classrooms
-            from apps.classrooms.models import Enrollment
             enrolled_classroom_ids = Enrollment.objects.filter(
                 student=user
             ).values_list('classroom_id', flat=True)
@@ -274,10 +303,20 @@ class QuizDeadlineView(APIView):
                     to_attr='user_submissions'
                 )
             )
+            assignments = Assignment.objects.filter(
+                classroom__in=enrolled_classrooms,
+            ).select_related('classroom').prefetch_related(
+                Prefetch(
+                    'submissions',
+                    queryset=Submission.objects.filter(student=user),
+                    to_attr='user_submissions'
+                )
+            )
 
         # Apply filters
         if classroom_id:
             quizzes = quizzes.filter(classroom_id=classroom_id)
+            assignments = assignments.filter(classroom_id=classroom_id)
 
         # Serialize and filter by status if requested
         serializer = QuizDeadlineSerializer(quizzes, many=True, context={'request': request})
@@ -286,6 +325,40 @@ class QuizDeadlineView(APIView):
         if status_filter:
             data = [q for q in data if q['deadline_status'] == status_filter]
 
+        for assignment in assignments:
+            if not assignment.due_date:
+                continue
+
+            if user.role == 'teacher':
+                assignment_items.append({
+                    'id': assignment.id,
+                    'title': assignment.title,
+                    'classroom_id': assignment.classroom_id,
+                    'classroom_name': assignment.classroom.name,
+                    'due_date': assignment.due_date,
+                    'deadline_status': 'overdue' if assignment.is_overdue else 'upcoming',
+                    'deadline_color': 'red' if assignment.is_overdue else 'green',
+                    'user_submission_status': 'teacher_view',
+                    'time_remaining': None,
+                    'type': 'assignment',
+                    'submission_count': assignment.submissions.count(),
+                    'pending_review_count': assignment.submissions.filter(grade__isnull=True).count(),
+                })
+            else:
+                user_submission = assignment.user_submissions[0] if getattr(assignment, 'user_submissions', []) else None
+                assignment_items.append({
+                    'id': assignment.id,
+                    'title': assignment.title,
+                    'classroom_id': assignment.classroom_id,
+                    'classroom_name': assignment.classroom.name,
+                    'due_date': assignment.due_date,
+                    'deadline_status': 'overdue' if assignment.is_overdue else 'upcoming',
+                    'deadline_color': 'red' if assignment.is_overdue else 'green',
+                    'user_submission_status': 'submitted' if user_submission else 'not_submitted',
+                    'time_remaining': None,
+                    'type': 'assignment',
+                })
+
         # For teachers, add submission stats
         if user.role == 'teacher':
             for i, quiz in enumerate(quizzes):
@@ -293,7 +366,12 @@ class QuizDeadlineView(APIView):
                     data[i]['submission_count'] = quiz.submission_count
                     data[i]['pending_review_count'] = quiz.pending_review_count
 
-        return Response(data)
+        combined = data + assignment_items
+        if status_filter:
+            combined = [item for item in combined if item['deadline_status'] == status_filter]
+
+        combined.sort(key=lambda item: item['due_date'] or timezone.now())
+        return Response(combined)
 
 
 class QuizSubmissionReviewView(APIView):

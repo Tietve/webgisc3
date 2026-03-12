@@ -1,4 +1,3 @@
-import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ROUTES } from '@constants'
 
@@ -8,6 +7,7 @@ import ProtectedRoute from '@features/auth/components/ProtectedRoute'
 
 // Dashboard
 import DashboardPage from '@features/dashboard/pages/DashboardPage'
+import Grade10HubPage from '@features/grade10/pages/Grade10HubPage'
 
 // Map
 import MapViewerPage from '@features/map/pages/MapViewerPage'
@@ -16,9 +16,11 @@ import MapViewerPage from '@features/map/pages/MapViewerPage'
 import ClassroomsPage from '@features/classroom/pages/ClassroomsPage'
 import ClassroomDetailPage from '@features/classroom/pages/ClassroomDetailPage'
 
+// Lessons
+import LessonViewerPage from '@features/lesson/pages/LessonViewerPage'
+import QuizTakerPage from '@features/quiz/pages/QuizTakerPage'
+
 // Placeholder pages (will be implemented later)
-const LessonViewerPage = () => <div>Lesson Viewer - Coming Soon</div>
-const QuizTakerPage = () => <div>Quiz Taker - Coming Soon</div>
 const ToolsPage = () => <div>Tools Page - Coming Soon</div>
 
 function App() {
@@ -35,6 +37,15 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.GRADE_10}
+          element={
+            <ProtectedRoute>
+              <Grade10HubPage />
             </ProtectedRoute>
           }
         />

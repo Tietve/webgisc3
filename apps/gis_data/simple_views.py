@@ -7,6 +7,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db import connection
 
+# Allowed tables and their category-like column
+TABLE_CATEGORY_COLUMN = {
+    'points_of_interest': 'category',
+    'boundaries': 'type',
+    'routes': 'type',
+    'line_features': 'category',
+    'polygon_features': 'category',
+}
+
 
 class SimpleLayerViewSet(viewsets.ViewSet):
     """
@@ -18,15 +27,30 @@ class SimpleLayerViewSet(viewsets.ViewSet):
     def list(self, request):
         """
         GET /api/v1/layers/
-        Trả về danh sách các layers từ database
+        Trả về danh sách các layers từ database với school/grade
         """
+        school = request.query_params.get('school')
+        grade = request.query_params.get('grade')
+        params = []
+        where_clauses = ['is_active = true']
+
+        if school:
+            where_clauses.append('school = %s')
+            params.append(school)
+        if grade:
+            where_clauses.append('grade = %s')
+            params.append(grade)
+
+        where_sql = ' AND '.join(where_clauses)
+
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT id, name, data_source_table, geom_type, description, is_active, filter_column, filter_value
+                SELECT id, name, data_source_table, geom_type, description, is_active,
+                       filter_column, filter_value, school, grade
                 FROM map_layers
-                WHERE is_active = true
-                ORDER BY id
-            """)
+                WHERE {where_sql}
+                ORDER BY school, grade, id
+            """.format(where_sql=where_sql), params)
 
             layers = []
             for row in cursor.fetchall():
@@ -38,7 +62,9 @@ class SimpleLayerViewSet(viewsets.ViewSet):
                     "description": row[4],
                     "is_active": row[5],
                     "filter_column": row[6],
-                    "filter_value": row[7]
+                    "filter_value": row[7],
+                    "school": row[8],
+                    "grade": row[9]
                 })
 
         return Response({"results": layers})
@@ -46,11 +72,12 @@ class SimpleLayerViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         """
         GET /api/v1/layers/{id}/
-        Trả về chi tiết 1 layer từ database
+        Trả về chi tiết 1 layer từ database với school/grade
         """
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT id, name, data_source_table, geom_type, description, is_active, filter_column, filter_value
+                SELECT id, name, data_source_table, geom_type, description, is_active,
+                       filter_column, filter_value, school, grade
                 FROM map_layers
                 WHERE id = %s
             """, [pk])
@@ -70,7 +97,9 @@ class SimpleLayerViewSet(viewsets.ViewSet):
                 "description": row[4],
                 "is_active": row[5],
                 "filter_column": row[6],
-                "filter_value": row[7]
+                "filter_value": row[7],
+                "school": row[8],
+                "grade": row[9]
             }
 
         return Response(layer)
@@ -100,6 +129,16 @@ class SimpleLayerViewSet(viewsets.ViewSet):
             filter_column = layer_info[1]
             filter_value = layer_info[2]
 
+        # Validate table name against whitelist
+        if table_name not in TABLE_CATEGORY_COLUMN:
+            return Response(
+                {"error": f"Unsupported table: {table_name}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Determine the category-like column for this table
+        cat_column = TABLE_CATEGORY_COLUMN[table_name]
+
         # Xây dựng WHERE clause cho filter
         where_clause = "WHERE geometry IS NOT NULL"
         params = []
@@ -120,7 +159,7 @@ class SimpleLayerViewSet(viewsets.ViewSet):
                             'properties', json_build_object(
                                 'id', id,
                                 'name', name,
-                                'category', COALESCE(category, 'Unknown')
+                                'category', COALESCE({cat_column}, 'Unknown')
                             ),
                             'geometry', ST_AsGeoJSON(geometry)::json
                         )

@@ -2,8 +2,8 @@ import api from './api'
 import { ENDPOINTS } from '@constants'
 
 const gisService = {
-  async listLayers() {
-    const response = await api.get(ENDPOINTS.GIS.LAYERS)
+  async listLayers(filters = {}) {
+    const response = await api.get(ENDPOINTS.GIS.LAYERS, { params: filters })
     return response.data
   },
 

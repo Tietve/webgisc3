@@ -44,6 +44,12 @@ class Classroom(models.Model):
         default=generate_enrollment_code,
         help_text='Unique code for students to join the classroom'
     )
+    subject = models.CharField(max_length=100, default='Địa lí', help_text='Subject name')
+    grade_level = models.CharField(max_length=10, default='10', help_text='School grade level')
+    semester = models.CharField(max_length=10, default='1', help_text='Semester number')
+    textbook_series = models.CharField(max_length=50, default='canh-dieu', help_text='Textbook series')
+    module_code = models.CharField(max_length=30, blank=True, help_text='Focused module code, if any')
+    is_published = models.BooleanField(default=True, help_text='Whether this classroom is active for learners')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -179,6 +185,16 @@ class Assignment(models.Model):
         null=True,
         related_name='created_assignments',
         help_text='Teacher who created this assignment'
+    )
+    resource_type = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text='Optional linked learning resource type: lesson or quiz'
+    )
+    resource_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text='Primary key of the linked learning resource'
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

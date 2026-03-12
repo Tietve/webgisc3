@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Calendar, AlertCircle, CheckCircle2, BookOpen, FileText } from 'lucide-react'
-import { quizService, assignmentService } from '@services'
+import { Clock, Calendar, CheckCircle2, BookOpen, FileText } from 'lucide-react'
+import { deadlineService } from '@services'
 import { useAuth } from '@hooks'
 
 /**
@@ -29,21 +29,15 @@ const DeadlineWidget = ({ onDeadlineClick }) => {
   const loadDeadlines = async () => {
     try {
       setLoading(true)
-      // Fetch quiz deadlines
-      const quizData = await quizService.getDeadlines()
-      const quizDeadlines = (quizData.results || quizData || []).map(item => ({
+      const data = await deadlineService.getUpcoming()
+      const normalized = (data.results || data || []).map((item) => ({
         ...item,
-        type: 'quiz',
-        icon: BookOpen,
-        dueDate: item.deadline || item.due_date
+        type: item.type || 'quiz',
+        icon: item.type === 'assignment' ? FileText : BookOpen,
+        dueDate: item.due_date,
       }))
 
-      // Fetch assignment deadlines from all classrooms
-      // Note: This assumes user has enrollments data
-      // In production, you'd have a dedicated endpoint: /deadlines/
-      const assignmentDeadlines = []
-
-      setDeadlines([...quizDeadlines, ...assignmentDeadlines].sort((a, b) =>
+      setDeadlines(normalized.sort((a, b) =>
         new Date(a.dueDate) - new Date(b.dueDate)
       ))
     } catch (err) {
@@ -135,7 +129,7 @@ const DeadlineWidget = ({ onDeadlineClick }) => {
                   <div className="text-center py-8 text-gray-500">
                     <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
                     <p className="text-sm">No upcoming deadlines</p>
-                    <p className="text-xs mt-1">You're all caught up! 🎉</p>
+                    <p className="text-xs mt-1">You&apos;re all caught up! 🎉</p>
                   </div>
                 ) : (
                   upcomingDeadlines.map((deadline, index) => {

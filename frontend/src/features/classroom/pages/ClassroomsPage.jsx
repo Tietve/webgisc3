@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MainLayout } from '@layouts'
-import { Modal, Spinner } from '@components/common'
+import { Spinner } from '@components/common'
 import { useAuth } from '@hooks'
 import { classroomService } from '@services'
 import { USER_ROLES } from '@constants'
@@ -50,7 +50,14 @@ const ClassroomsPage = () => {
     setError('')
     try {
       console.log('Creating classroom:', formData.className)
-      const result = await classroomService.create(formData.className)
+      const result = await classroomService.create({
+        name: formData.className,
+        subject: 'Địa lí',
+        grade_level: '10',
+        semester: '1',
+        textbook_series: 'canh-dieu',
+        is_published: true,
+      })
       console.log('Created classroom:', result)
 
       console.log('Reloading classrooms...')
@@ -211,11 +218,20 @@ const ClassroomsPage = () => {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <span>👥</span>
-                            <span>{classroom.student_count || 0} học sinh</span>
-                          </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <span>👥</span>
+                          <span>{classroom.student_count || 0} học sinh</span>
                         </div>
+
+                        {isTeacher && (
+                          <button
+                            onClick={() => viewStudents(classroom)}
+                            className="inline-flex rounded-lg border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                          >
+                            Xem học sinh
+                          </button>
+                        )}
+                      </div>
 
                         {/* Action Button */}
                         <button

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Send, AlertTriangle, CheckCircle, Loader } from 'lucide-react'
 import FileUpload from '../common/FileUpload'
@@ -48,7 +48,7 @@ const SubmissionForm = ({ assignment, onSubmitSuccess, onCancel }) => {
         formData.append('file', selectedFile)
       }
 
-      const response = await submissionService.submit(assignment.id, formData)
+      const response = await submissionService.submit(assignment.classroom, assignment.id, formData)
 
       setSuccess(true)
 

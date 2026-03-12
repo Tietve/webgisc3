@@ -2,8 +2,8 @@ import api from './api'
 import { ENDPOINTS } from '@constants'
 
 const quizService = {
-  async list() {
-    const response = await api.get(ENDPOINTS.QUIZZES.LIST)
+  async list(filters = {}) {
+    const response = await api.get(ENDPOINTS.QUIZZES.LIST, { params: filters })
     return response.data
   },
 

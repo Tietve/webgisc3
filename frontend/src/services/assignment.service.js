@@ -21,8 +21,8 @@ const assignmentService = {
    * @param {number} id - Assignment ID
    * @returns {Promise} Assignment details
    */
-  async get(id) {
-    const response = await api.get(ENDPOINTS.ASSIGNMENTS.DETAIL(id))
+  async get(classroomId, id) {
+    const response = await api.get(ENDPOINTS.ASSIGNMENTS.DETAIL(classroomId, id))
     return response.data
   },
 
@@ -45,8 +45,8 @@ const assignmentService = {
    * @param {FormData} formData - Updated data
    * @returns {Promise} Updated assignment
    */
-  async update(id, formData) {
-    const response = await api.put(ENDPOINTS.ASSIGNMENTS.DETAIL(id), formData, {
+  async update(classroomId, id, formData) {
+    const response = await api.put(ENDPOINTS.ASSIGNMENTS.DETAIL(classroomId, id), formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     return response.data
@@ -57,8 +57,8 @@ const assignmentService = {
    * @param {number} id - Assignment ID
    * @returns {Promise}
    */
-  async delete(id) {
-    const response = await api.delete(ENDPOINTS.ASSIGNMENTS.DETAIL(id))
+  async delete(classroomId, id) {
+    const response = await api.delete(ENDPOINTS.ASSIGNMENTS.DETAIL(classroomId, id))
     return response.data
   },
 
@@ -67,8 +67,13 @@ const assignmentService = {
    * @param {number} assignmentId - Assignment ID
    * @returns {Promise} Submissions list
    */
-  async getSubmissions(assignmentId) {
-    const response = await api.get(ENDPOINTS.ASSIGNMENTS.SUBMISSIONS(assignmentId))
+  async getSubmissions(classroomId, assignmentId) {
+    const response = await api.get(ENDPOINTS.ASSIGNMENTS.SUBMISSIONS(classroomId, assignmentId))
+    return response.data
+  },
+
+  async getSubmissionStatus(classroomId, assignmentId) {
+    const response = await api.get(ENDPOINTS.ASSIGNMENTS.SUBMISSION_STATUS(classroomId, assignmentId))
     return response.data
   }
 }

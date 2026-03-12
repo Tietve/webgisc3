@@ -1,5 +1,8 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
+// In production, use relative path so it works on any domain
+// In development, use localhost:8080
+export const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.MODE === 'production' ? '/api/v1' : 'http://localhost:8080/api/v1')
 
 // API Endpoints
 export const ENDPOINTS = {
@@ -39,13 +42,14 @@ export const ENDPOINTS = {
   ASSIGNMENTS: {
     LIST: (classroomId) => `/classrooms/${classroomId}/assignments/`,
     CREATE: (classroomId) => `/classrooms/${classroomId}/assignments/`,
-    DETAIL: (id) => `/assignments/${id}/`,
-    SUBMISSIONS: (assignmentId) => `/assignments/${assignmentId}/submissions/`,
+    DETAIL: (classroomId, id) => `/classrooms/${classroomId}/assignments/${id}/`,
+    SUBMISSIONS: (classroomId, assignmentId) => `/classrooms/${classroomId}/assignments/${assignmentId}/submissions/`,
+    SUBMISSION_STATUS: (classroomId, assignmentId) => `/classrooms/${classroomId}/assignments/${assignmentId}/submission_status/`,
   },
 
   // Submissions
   SUBMISSIONS: {
-    CREATE: (assignmentId) => `/assignments/${assignmentId}/submit/`,
+    CREATE: (classroomId, assignmentId) => `/classrooms/${classroomId}/assignments/${assignmentId}/submissions/submit/`,
     DETAIL: (id) => `/submissions/${id}/`,
     GRADE: (id) => `/submissions/${id}/grade/`,
     MY_SUBMISSIONS: (classroomId) => `/classrooms/${classroomId}/my-submissions/`,

@@ -20,8 +20,9 @@ const classroomService = {
    * @param {string} name - Classroom name
    * @returns {Promise} Created classroom
    */
-  async create(name) {
-    const response = await api.post(ENDPOINTS.CLASSROOMS.CREATE, { name })
+  async create(payload) {
+    const body = typeof payload === 'string' ? { name: payload } : payload
+    const response = await api.post(ENDPOINTS.CLASSROOMS.CREATE, body)
     return response.data
   },
 

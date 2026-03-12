@@ -2,6 +2,7 @@
 Serializers for interactive lesson system.
 """
 from rest_framework import serializers
+from apps.gis_data.serializers import MapLayerSerializer
 from .models import Lesson, LessonStep, MapAction
 
 
@@ -32,15 +33,25 @@ class LessonListSerializer(serializers.ModelSerializer):
     Serializer for listing lessons (without detailed steps).
     """
     step_count = serializers.SerializerMethodField()
+    layers = MapLayerSerializer(many=True, read_only=True)
+    quiz_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
-        fields = ('id', 'title', 'description', 'step_count', 'created_at')
+        fields = (
+            'id', 'title', 'description', 'subject', 'grade_level', 'semester',
+            'textbook_series', 'module_code', 'lesson_type', 'is_published',
+            'step_count', 'quiz_id', 'layers', 'created_at'
+        )
         read_only_fields = fields
 
     def get_step_count(self, obj):
         """Get the number of steps in the lesson."""
         return obj.steps.count()
+
+    def get_quiz_id(self, obj):
+        quiz = obj.quizzes.filter(is_published=True).order_by('id').first()
+        return quiz.id if quiz else None
 
 
 class LessonDetailSerializer(serializers.ModelSerializer):
@@ -51,8 +62,18 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     Returns complete lesson data including nested steps and map actions.
     """
     steps = LessonStepSerializer(many=True, read_only=True)
+    layers = MapLayerSerializer(many=True, read_only=True)
+    quiz_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Lesson
-        fields = ('id', 'title', 'description', 'steps', 'created_at', 'updated_at')
+        fields = (
+            'id', 'title', 'description', 'subject', 'grade_level', 'semester',
+            'textbook_series', 'module_code', 'lesson_type', 'is_published',
+            'quiz_id', 'layers', 'steps', 'created_at', 'updated_at'
+        )
         read_only_fields = fields
+
+    def get_quiz_id(self, obj):
+        quiz = obj.quizzes.filter(is_published=True).order_by('id').first()
+        return quiz.id if quiz else None

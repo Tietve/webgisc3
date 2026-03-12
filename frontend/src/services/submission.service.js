@@ -12,8 +12,8 @@ const submissionService = {
    * @param {FormData} formData - Submission data (text_answer, file_submission)
    * @returns {Promise} Created submission
    */
-  async submit(assignmentId, formData) {
-    const response = await api.post(ENDPOINTS.SUBMISSIONS.CREATE(assignmentId), formData, {
+  async submit(classroomId, assignmentId, formData) {
+    const response = await api.post(ENDPOINTS.SUBMISSIONS.CREATE(classroomId, assignmentId), formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     return response.data
@@ -59,8 +59,18 @@ const submissionService = {
    * @returns {Promise} Updated submission with grade
    */
   async grade(id, data) {
-    const response = await api.post(ENDPOINTS.SUBMISSIONS.GRADE(id), data)
-    return response.data
+    try {
+      await api.post(ENDPOINTS.SUBMISSIONS.GRADE(id), data)
+    } catch (error) {
+      const detail = error.response?.data?.error || ''
+      if (error.response?.status !== 400 || !detail.includes('already been graded')) {
+        throw error
+      }
+      await api.put(ENDPOINTS.SUBMISSIONS.GRADE(id), data)
+    }
+
+    const detailResponse = await api.get(ENDPOINTS.SUBMISSIONS.DETAIL(id))
+    return detailResponse.data
   },
 
   /**

@@ -4,6 +4,19 @@ Models for interactive lesson system.
 from django.db import models
 
 
+TEXTBOOK_SERIES_CHOICES = [
+    ('canh-dieu', 'Cánh Diều'),
+    ('ket-noi', 'Kết nối tri thức'),
+    ('chan-troi', 'Chân trời sáng tạo'),
+]
+
+
+LESSON_TYPE_CHOICES = [
+    ('overview', 'Overview'),
+    ('practice', 'Practice'),
+]
+
+
 class Lesson(models.Model):
     """
     Lesson model for interactive educational content.
@@ -17,6 +30,29 @@ class Lesson(models.Model):
     """
     title = models.CharField(max_length=255, help_text='Title of the lesson')
     description = models.TextField(help_text='Detailed description of the lesson')
+    subject = models.CharField(max_length=100, default='Địa lí', help_text='Subject name')
+    grade_level = models.CharField(max_length=10, default='10', help_text='School grade level')
+    semester = models.CharField(max_length=10, default='1', help_text='Semester number')
+    textbook_series = models.CharField(
+        max_length=50,
+        choices=TEXTBOOK_SERIES_CHOICES,
+        default='canh-dieu',
+        help_text='Textbook series for this lesson'
+    )
+    module_code = models.CharField(max_length=30, blank=True, help_text='Curriculum module code')
+    lesson_type = models.CharField(
+        max_length=20,
+        choices=LESSON_TYPE_CHOICES,
+        default='overview',
+        help_text='Whether this lesson is overview or practice'
+    )
+    is_published = models.BooleanField(default=True, help_text='Whether this lesson is visible to learners')
+    layers = models.ManyToManyField(
+        'gis_data.MapLayer',
+        related_name='lessons',
+        blank=True,
+        help_text='Map layers used by this lesson'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -24,7 +60,7 @@ class Lesson(models.Model):
         db_table = 'lessons'
         verbose_name = 'Lesson'
         verbose_name_plural = 'Lessons'
-        ordering = ['-created_at']
+        ordering = ['module_code', 'lesson_type', '-created_at']
 
     def __str__(self):
         return self.title
@@ -40,6 +76,7 @@ class MapAction(models.Model):
         payload: JSON data for the action parameters
     """
     ACTION_TYPE_CHOICES = [
+        ('flyTo', 'Fly To Location'),
         ('TOGGLE_LAYER', 'Toggle Layer'),
         ('ZOOM_TO', 'Zoom To Location'),
         ('HIGHLIGHT', 'Highlight Feature'),

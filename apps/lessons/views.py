@@ -3,7 +3,7 @@ Views for interactive lesson system.
 """
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .models import Lesson
 from .serializers import LessonListSerializer, LessonDetailSerializer
 
@@ -17,8 +17,25 @@ class LessonViewSet(viewsets.ReadOnlyModelViewSet):
 
     Read-only endpoint for all authenticated users.
     """
-    queryset = Lesson.objects.all().prefetch_related('steps__map_action')
+    queryset = Lesson.objects.all().prefetch_related('steps__map_action', 'layers', 'quizzes')
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_published=True)
+        params = self.request.query_params
+
+        if params.get('grade_level'):
+            queryset = queryset.filter(grade_level=params['grade_level'])
+        if params.get('semester'):
+            queryset = queryset.filter(semester=params['semester'])
+        if params.get('textbook_series'):
+            queryset = queryset.filter(textbook_series=params['textbook_series'])
+        if params.get('module_code'):
+            queryset = queryset.filter(module_code=params['module_code'])
+        if params.get('lesson_type'):
+            queryset = queryset.filter(lesson_type=params['lesson_type'])
+
+        return queryset
 
     def get_serializer_class(self):
         """
@@ -31,6 +48,13 @@ class LessonViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(
         summary="List all lessons",
         description="Get a list of all available interactive lessons",
+        parameters=[
+            OpenApiParameter(name='grade_level', type=str, required=False),
+            OpenApiParameter(name='semester', type=str, required=False),
+            OpenApiParameter(name='textbook_series', type=str, required=False),
+            OpenApiParameter(name='module_code', type=str, required=False),
+            OpenApiParameter(name='lesson_type', type=str, required=False),
+        ],
         responses={200: LessonListSerializer(many=True)},
         tags=['Lessons']
     )

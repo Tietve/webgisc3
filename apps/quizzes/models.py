@@ -31,7 +31,21 @@ class Quiz(models.Model):
         blank=True,
         help_text='Classroom this quiz is assigned to'
     )
+    lesson = models.ForeignKey(
+        'lessons.Lesson',
+        on_delete=models.SET_NULL,
+        related_name='quizzes',
+        null=True,
+        blank=True,
+        help_text='Lesson this quiz reinforces'
+    )
     description = models.TextField(blank=True, help_text='Description of the quiz')
+    subject = models.CharField(max_length=100, default='Địa lí', help_text='Subject name')
+    grade_level = models.CharField(max_length=10, default='10', help_text='School grade level')
+    semester = models.CharField(max_length=10, default='1', help_text='Semester number')
+    textbook_series = models.CharField(max_length=50, default='canh-dieu', help_text='Textbook series')
+    module_code = models.CharField(max_length=30, blank=True, help_text='Curriculum module code')
+    is_published = models.BooleanField(default=True, help_text='Whether this quiz is visible to learners')
     due_date = models.DateTimeField(
         null=True,
         blank=True,
@@ -54,6 +68,9 @@ class Quiz(models.Model):
         verbose_name = 'Quiz'
         verbose_name_plural = 'Quizzes'
         ordering = ['due_date', '-created_at']
+        indexes = [
+            models.Index(fields=['grade_level', 'semester', 'textbook_series'], name='idx_quiz_curriculum'),
+        ]
 
     def __str__(self):
         return self.title

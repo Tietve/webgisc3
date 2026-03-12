@@ -22,7 +22,7 @@ const deadlineService = {
    */
   async getUpcoming() {
     const response = await api.get(ENDPOINTS.DEADLINES.LIST, {
-      params: { status: 'upcoming', limit: 10 }
+      params: { limit: 10 }
     })
     return response.data
   },

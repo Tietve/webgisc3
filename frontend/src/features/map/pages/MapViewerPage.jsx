@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { MAP_CONFIG } from '@constants'
+import { useEffect, useMemo, useState, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { MAP_CONFIG, ROUTES } from '@constants'
 import { useAuth } from '@hooks'
 import MapboxMap from '@components/map/MapboxMap'
 import CollapsibleSidebar from '@components/layout/CollapsibleSidebar'
@@ -12,9 +13,12 @@ import QuizPanel from '@components/map/QuizPanel'
 import DeadlineWidget from '@components/map/DeadlineWidget'
 import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
+import quizService from '@services/quiz.service'
 
 const MapViewerPage = () => {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const mapRef = useRef(null)
   const [activePanel, setActivePanel] = useState(null)
   const [isQuizOpen, setIsQuizOpen] = useState(false)
@@ -22,6 +26,46 @@ const MapViewerPage = () => {
   const [is3DMode, setIs3DMode] = useState(false)
   const [layers, setLayers] = useState([])
   const [enabledLayers, setEnabledLayers] = useState(new Set())
+  const [activeQuizId, setActiveQuizId] = useState(searchParams.get('quiz'))
+
+  // Store loaded GeoJSON data so layers can be re-added after style changes
+  const loadedGeoJSONRef = useRef({})
+  const isStudentView = searchParams.get('studentView') === '1'
+  const layerFilters = useMemo(() => ({
+    school: searchParams.get('school') || (searchParams.get('grade') === '10' ? 'THPT' : undefined),
+    grade: searchParams.get('grade') || undefined,
+  }), [searchParams])
+  const lessonFilters = useMemo(() => ({
+    grade_level: searchParams.get('grade') || undefined,
+    semester: searchParams.get('semester') || undefined,
+    textbook_series: searchParams.get('textbook') || undefined,
+    module_code: searchParams.get('module') || undefined,
+  }), [searchParams])
+
+  useEffect(() => {
+    const quizFromQuery = searchParams.get('quiz')
+    setActiveQuizId(quizFromQuery || null)
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!isStudentView) return
+
+    const loadQuiz = async () => {
+      try {
+        const response = await quizService.list(lessonFilters)
+        const quizzes = response.results || response || []
+        if (quizzes.length > 0) {
+          setActiveQuizId(quizzes[0].id)
+        }
+      } catch (error) {
+        console.error('Failed to load student quiz:', error)
+      }
+    }
+
+    if (!searchParams.get('quiz')) {
+      loadQuiz()
+    }
+  }, [isStudentView, lessonFilters, searchParams])
 
   const togglePanel = (panel) => {
     setActivePanel(activePanel === panel ? null : panel)
@@ -38,20 +82,170 @@ const MapViewerPage = () => {
     if (mapRef.current) {
       mapRef.current.toggleStyle(!isDarkMode)
       setIsDarkMode(!isDarkMode)
+
+      // Re-add all enabled layers after style change (Mapbox removes them on style switch)
+      const map = mapRef.current.getMap()
+      if (map) {
+        map.once('style.load', () => {
+          enabledLayers.forEach(layerId => {
+            const geoData = loadedGeoJSONRef.current[layerId]
+            if (geoData) {
+              addLayerToMap(layerId, geoData)
+            }
+          })
+        })
+      }
     }
   }
 
-  const handleMapLoad = async (map) => {
+  const handleMapLoad = async () => {
     console.log('Mapbox map loaded successfully')
 
     // Load layers from backend
     try {
-      const response = await gisService.listLayers()
+      const response = await gisService.listLayers(layerFilters)
       const layersData = response.results || response || []
       setLayers(layersData)
       console.log('Loaded layers:', layersData)
     } catch (error) {
       console.error('Failed to load layers:', error)
+    }
+  }
+
+  // Helper: add a GeoJSON layer to the map based on geometry type
+  const addLayerToMap = (layerId, featuresData) => {
+    if (!mapRef.current || !featuresData.features || featuresData.features.length === 0) return
+
+    mapRef.current.addGeoJSONSource(`layer-${layerId}`, featuresData)
+
+    const firstFeature = featuresData.features[0]
+    const geomType = firstFeature.geometry.type
+
+    if (geomType === 'Point' || geomType === 'MultiPoint') {
+      mapRef.current.addLayer({
+        id: `layer-${layerId}`,
+        type: 'circle',
+        source: `layer-${layerId}`,
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#34a853',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      })
+
+      mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
+        const coordinates = feature.geometry.coordinates.slice()
+        const properties = feature.properties
+
+        let popupHTML = `
+          <div style="font-family: system-ui, sans-serif; max-width: 240px;">
+            <div style="background: #34a853; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+              <strong style="font-size: 14px;">${properties.name || 'Unnamed Location'}</strong>
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+        `
+
+        Object.keys(properties).forEach(key => {
+          if (key !== 'name' && key !== 'id' && properties[key]) {
+            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+            popupHTML += `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
+                <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
+              </tr>
+            `
+          }
+        })
+
+        popupHTML += '</table></div>'
+        mapRef.current.showPopup(coordinates, popupHTML)
+      })
+    } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
+      mapRef.current.addLayer({
+        id: `layer-${layerId}`,
+        type: 'line',
+        source: `layer-${layerId}`,
+        paint: {
+          'line-color': '#34a853',
+          'line-width': 3
+        }
+      })
+
+      mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
+        const coordinates = feature.geometry.coordinates[0]
+        const properties = feature.properties
+
+        let popupHTML = `
+          <div style="font-family: system-ui, sans-serif; max-width: 240px;">
+            <div style="background: #667eea; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+              <strong style="font-size: 14px;">${properties.name || 'Unnamed Route'}</strong>
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+        `
+
+        Object.keys(properties).forEach(key => {
+          if (key !== 'name' && key !== 'id' && properties[key]) {
+            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+            popupHTML += `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
+                <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
+              </tr>
+            `
+          }
+        })
+
+        popupHTML += '</table></div>'
+        mapRef.current.showPopup(coordinates, popupHTML)
+      })
+    } else if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-fill`,
+        type: 'fill',
+        source: `layer-${layerId}`,
+        paint: {
+          'fill-color': '#34a853',
+          'fill-opacity': 0.3
+        }
+      })
+      mapRef.current.addLayer({
+        id: `layer-${layerId}-outline`,
+        type: 'line',
+        source: `layer-${layerId}`,
+        paint: {
+          'line-color': '#34a853',
+          'line-width': 2
+        }
+      })
+
+      mapRef.current.addClickHandler(`layer-${layerId}-fill`, (feature) => {
+        const coordinates = feature.geometry.coordinates[0][0]
+        const properties = feature.properties
+
+        let popupHTML = `
+          <div style="font-family: system-ui, sans-serif; max-width: 240px;">
+            <div style="background: #f5576c; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+              <strong style="font-size: 14px;">${properties.name || 'Unnamed Area'}</strong>
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+        `
+
+        Object.keys(properties).forEach(key => {
+          if (key !== 'name' && key !== 'id' && properties[key]) {
+            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+            popupHTML += `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
+                <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
+              </tr>
+            `
+          }
+        })
+
+        popupHTML += '</table></div>'
+        mapRef.current.showPopup(coordinates, popupHTML)
+      })
     }
   }
 
@@ -65,160 +259,19 @@ const MapViewerPage = () => {
       try {
         const featuresData = await gisService.getFeatures(layerId)
 
-        if (mapRef.current && featuresData.features) {
-          // Add GeoJSON source and layer
-          mapRef.current.addGeoJSONSource(`layer-${layerId}`, featuresData)
-
-          // Determine layer type and add appropriate layer
-          const firstFeature = featuresData.features[0]
-          if (firstFeature) {
-            const geomType = firstFeature.geometry.type
-
-            if (geomType === 'Point' || geomType === 'MultiPoint') {
-              mapRef.current.addLayer({
-                id: `layer-${layerId}`,
-                type: 'circle',
-                source: `layer-${layerId}`,
-                paint: {
-                  'circle-radius': 6,
-                  'circle-color': '#34a853',
-                  'circle-stroke-width': 2,
-                  'circle-stroke-color': '#ffffff'
-                }
-              })
-
-              // Add click handler for points
-              mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
-                const coordinates = feature.geometry.coordinates.slice()
-                const properties = feature.properties
-
-                // Create clean popup HTML with simple styling
-                let popupHTML = `
-                  <div style="font-family: system-ui, sans-serif; max-width: 240px;">
-                    <div style="background: #34a853; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-                      <strong style="font-size: 14px;">📍 ${properties.name || 'Unnamed Location'}</strong>
-                    </div>
-                    <table style="width: 100%; border-collapse: collapse;">
-                `
-
-                // Add properties as table rows
-                Object.keys(properties).forEach(key => {
-                  if (key !== 'name' && key !== 'id' && properties[key]) {
-                    const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
-                    popupHTML += `
-                      <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
-                        <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
-                      </tr>
-                    `
-                  }
-                })
-
-                popupHTML += `
-                    </table>
-                  </div>
-                `
-
-                // Show popup
-                mapRef.current.showPopup(coordinates, popupHTML)
-              })
-            } else if (geomType === 'LineString' || geomType === 'MultiLineString') {
-              mapRef.current.addLayer({
-                id: `layer-${layerId}`,
-                type: 'line',
-                source: `layer-${layerId}`,
-                paint: {
-                  'line-color': '#34a853',
-                  'line-width': 3
-                }
-              })
-
-              // Add click handler for lines
-              mapRef.current.addClickHandler(`layer-${layerId}`, (feature) => {
-                const coordinates = feature.geometry.coordinates[0]
-                const properties = feature.properties
-
-                let popupHTML = `
-                  <div style="font-family: system-ui, sans-serif; max-width: 240px;">
-                    <div style="background: #667eea; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-                      <strong style="font-size: 14px;">🛣️ ${properties.name || 'Unnamed Route'}</strong>
-                    </div>
-                    <table style="width: 100%; border-collapse: collapse;">
-                `
-
-                Object.keys(properties).forEach(key => {
-                  if (key !== 'name' && key !== 'id' && properties[key]) {
-                    const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
-                    popupHTML += `
-                      <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
-                        <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
-                      </tr>
-                    `
-                  }
-                })
-
-                popupHTML += '</table></div>'
-                mapRef.current.showPopup(coordinates, popupHTML)
-              })
-            } else if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
-              // Add fill layer
-              mapRef.current.addLayer({
-                id: `layer-${layerId}-fill`,
-                type: 'fill',
-                source: `layer-${layerId}`,
-                paint: {
-                  'fill-color': '#34a853',
-                  'fill-opacity': 0.3
-                }
-              })
-              // Add outline layer
-              mapRef.current.addLayer({
-                id: `layer-${layerId}-outline`,
-                type: 'line',
-                source: `layer-${layerId}`,
-                paint: {
-                  'line-color': '#34a853',
-                  'line-width': 2
-                }
-              })
-
-              // Add click handler for polygons
-              mapRef.current.addClickHandler(`layer-${layerId}-fill`, (feature) => {
-                const coordinates = feature.geometry.coordinates[0][0]
-                const properties = feature.properties
-
-                let popupHTML = `
-                  <div style="font-family: system-ui, sans-serif; max-width: 240px;">
-                    <div style="background: #f5576c; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-                      <strong style="font-size: 14px;">🗺️ ${properties.name || 'Unnamed Area'}</strong>
-                    </div>
-                    <table style="width: 100%; border-collapse: collapse;">
-                `
-
-                Object.keys(properties).forEach(key => {
-                  if (key !== 'name' && key !== 'id' && properties[key]) {
-                    const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
-                    popupHTML += `
-                      <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 6px 8px 6px 0; font-weight: 600; color: #666; font-size: 12px; vertical-align: top;">${label}:</td>
-                        <td style="padding: 6px 0; color: #333; font-size: 12px;">${properties[key]}</td>
-                      </tr>
-                    `
-                  }
-                })
-
-                popupHTML += '</table></div>'
-                mapRef.current.showPopup(coordinates, popupHTML)
-              })
-            }
-          }
+        if (featuresData.features) {
+          // Cache GeoJSON data for re-adding after style changes
+          loadedGeoJSONRef.current[layerId] = featuresData
+          addLayerToMap(layerId, featuresData)
         }
       } catch (error) {
         console.error(`Failed to load layer ${layerId}:`, error)
       }
     } else {
       newEnabledLayers.delete(layerId)
+
+      // Clean up cached data
+      delete loadedGeoJSONRef.current[layerId]
 
       // Remove click handlers and layers from map
       if (mapRef.current) {
@@ -250,7 +303,7 @@ const MapViewerPage = () => {
         />
 
         {/* Top Toolbar */}
-        <MapTopToolbar activePanel={activePanel} onTogglePanel={togglePanel} />
+        <MapTopToolbar activePanel={activePanel} onTogglePanel={togglePanel} compact={isStudentView} />
 
         {/* 3D & Dark Mode Controls */}
         <div className="absolute top-28 right-8 z-20 flex flex-col gap-3">
@@ -261,29 +314,32 @@ const MapViewerPage = () => {
           >
             <span className="text-2xl">{isDarkMode ? '☀️' : '🌙'}</span>
           </button>
-          <button
-            onClick={toggle3D}
-            className={`w-12 h-12 rounded-lg shadow-lg flex items-center justify-center transition-all duration-300 ${
-              is3DMode
-                ? 'bg-primary text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-            title="Toggle 3D View"
-          >
-            <span className="text-2xl">🗻</span>
-          </button>
+          {!isStudentView && (
+            <button
+              onClick={toggle3D}
+              className={`w-12 h-12 rounded-lg shadow-lg flex items-center justify-center transition-all duration-300 ${
+                is3DMode
+                  ? 'bg-primary text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title="Toggle 3D View"
+            >
+              <span className="text-2xl">🗻</span>
+            </button>
+          )}
         </div>
 
         {/* Deadline Widget - Always visible */}
         <DeadlineWidget
           onDeadlineClick={(deadline) => {
-            console.log('Deadline clicked:', deadline)
-            // TODO: Navigate to assignment/quiz
+            if ((deadline.type || 'quiz') === 'quiz') {
+              navigate(ROUTES.QUIZ.replace(':id', deadline.id))
+            }
           }}
         />
 
         {/* Panel Dropdowns */}
-        {activePanel === 'tools' && <ToolsPanel />}
+        {activePanel === 'tools' && !isStudentView && <ToolsPanel />}
         {activePanel === 'layers' && (
           <LayersPanel
             layers={layers}
@@ -291,7 +347,14 @@ const MapViewerPage = () => {
             onToggleLayer={toggleLayer}
           />
         )}
-        {activePanel === 'lessons' && <LessonsPanel />}
+        {activePanel === 'lessons' && (
+          <LessonsPanel
+            filters={lessonFilters}
+            onLessonSelect={(lessonId) => {
+              navigate(`/lessons/${lessonId}`)
+            }}
+          />
+        )}
         {activePanel === 'assignments' && (
           <AssignmentList
             classroomId={null}
@@ -305,13 +368,14 @@ const MapViewerPage = () => {
         {/* Quiz Floating Button */}
         <QuizFloatingButton
           onClick={() => setIsQuizOpen(true)}
-          hasActiveQuiz={true}
+          hasActiveQuiz={Boolean(activeQuizId)}
         />
 
         {/* Quiz Panel */}
         <QuizPanel
           isOpen={isQuizOpen}
           onClose={() => setIsQuizOpen(false)}
+          quizId={activeQuizId}
         />
       </div>
     </div>

@@ -6,6 +6,7 @@ export const ROUTES = {
 
   // Protected routes
   DASHBOARD: '/dashboard',
+  GRADE_10: '/grade-10',
   CLASSROOMS: '/classrooms',
   MAP: '/map',
   TOOLS: '/tools',
@@ -20,4 +21,5 @@ export const ROUTES = {
 export const getRoute = {
   lesson: (id) => `/lessons/${id}`,
   quiz: (id) => `/quiz/${id}`,
+  grade10: () => '/grade-10',
 }

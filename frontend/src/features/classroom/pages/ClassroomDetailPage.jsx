@@ -18,7 +18,6 @@ const ClassroomDetailPage = () => {
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
   const [announcementText, setAnnouncementText] = useState('')
   const [announcements, setAnnouncements] = useState([])
-  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false)
 
   // Assignment states
   const [selectedAssignment, setSelectedAssignment] = useState(null)
@@ -44,17 +43,8 @@ const ClassroomDetailPage = () => {
 
   const loadClassroom = async () => {
     try {
-      // For now, we'll fetch from the list and find the matching one
-      const data = await classroomService.list()
-      const classroomsList = Array.isArray(data) ? data : (data.results || [])
-      const foundClassroom = classroomsList.find(c => c.id === parseInt(id))
-
-      if (foundClassroom) {
-        setClassroom(foundClassroom)
-      } else {
-        // Classroom not found, redirect back
-        navigate('/classrooms')
-      }
+      const foundClassroom = await classroomService.get(id)
+      setClassroom(foundClassroom)
     } catch (error) {
       console.error('Error loading classroom:', error)
       navigate('/classrooms')
@@ -65,14 +55,11 @@ const ClassroomDetailPage = () => {
 
   const loadAnnouncements = async () => {
     try {
-      setLoadingAnnouncements(true)
       const data = await announcementService.list(id)
       const announcementsList = Array.isArray(data) ? data : (data.results || [])
       setAnnouncements(announcementsList)
     } catch (error) {
       console.error('Error loading announcements:', error)
-    } finally {
-      setLoadingAnnouncements(false)
     }
   }
 
@@ -91,8 +78,18 @@ const ClassroomDetailPage = () => {
   // Assignment handlers
   const handleAssignmentClick = async (assignmentId) => {
     try {
-      const assignment = await assignmentService.get(assignmentId)
+      const assignment = await assignmentService.get(id, assignmentId)
       setSelectedAssignment(assignment)
+
+      if (!isOwner && assignment.resource_type === 'lesson' && assignment.resource_id) {
+        navigate(`/lessons/${assignment.resource_id}`)
+        return
+      }
+
+      if (!isOwner && assignment.resource_type === 'quiz' && assignment.resource_id) {
+        navigate(`/quiz/${assignment.resource_id}`)
+        return
+      }
 
       if (isOwner) {
         setShowGradingInterface(true)

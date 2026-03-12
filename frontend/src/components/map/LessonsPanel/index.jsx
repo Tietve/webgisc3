@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Clock, Star, CheckCircle2, MapPin, Map, Globe, Target, Filter, Loader, AlertCircle } from 'lucide-react'
+import { BookOpen, Layers3, Star, Filter, Loader, AlertCircle } from 'lucide-react'
 import Panel from '../../ui/Panel'
 import CollapsibleSection from '../../ui/CollapsibleSection'
 import { lessonService } from '@services'
@@ -17,36 +17,25 @@ import { lessonService } from '@services'
  * - Dark mode support
  * - Loading and error states
  */
-const LessonsPanel = ({ onLessonSelect }) => {
-  const [selectedDifficulty, setSelectedDifficulty] = useState('all')
+const LessonsPanel = ({ onLessonSelect, filters = {} }) => {
+  const [selectedModule, setSelectedModule] = useState('all')
   const [lessons, setLessons] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Icon mapping for lessons
-  const iconMap = {
-    'MapPin': MapPin,
-    'Map': Map,
-    'Globe': Globe,
-    'Target': Target,
-    'BookOpen': BookOpen,
-  }
-
   useEffect(() => {
     loadLessons()
-  }, [])
+  }, [JSON.stringify(filters)])
 
   const loadLessons = async () => {
     try {
       setLoading(true)
       setError(null)
-      const data = await lessonService.list()
+      const data = await lessonService.list(filters)
       const lessonsList = Array.isArray(data) ? data : (data.results || [])
 
-      // Map lessons to include icon and color
       const mappedLessons = lessonsList.map((lesson, index) => ({
         ...lesson,
-        icon: iconMap[lesson.icon] || BookOpen,
         color: getColorGradient(index),
       }))
 
@@ -71,33 +60,15 @@ const LessonsPanel = ({ onLessonSelect }) => {
     return gradients[index % gradients.length]
   }
 
-  const difficulties = [
-    { id: 'all', label: 'Tất cả', color: 'bg-gray-500' },
-    { id: 'Beginner', label: 'Cơ bản', color: 'bg-green-500' },
-    { id: 'Intermediate', label: 'Trung bình', color: 'bg-yellow-500' },
-    { id: 'Advanced', label: 'Nâng cao', color: 'bg-red-500' },
-  ]
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Beginner':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      case 'Intermediate':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-      case 'Advanced':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-    }
-  }
+  const modules = [{ id: 'all', label: 'Tất cả' }, ...Array.from(new Set(lessons.map((lesson) => lesson.module_code))).filter(Boolean).map((code) => ({ id: code, label: code.toUpperCase() }))]
 
   const filteredLessons =
-    selectedDifficulty === 'all'
+    selectedModule === 'all'
       ? lessons
-      : lessons.filter((lesson) => lesson.difficulty === selectedDifficulty)
+      : lessons.filter((lesson) => lesson.module_code === selectedModule)
 
   const renderLessonCard = (lesson) => {
-    const Icon = lesson.icon
+    const Icon = lesson.lesson_type === 'practice' ? Layers3 : BookOpen
 
     return (
       <motion.div
@@ -115,16 +86,6 @@ const LessonsPanel = ({ onLessonSelect }) => {
         <div className={`absolute inset-0 bg-gradient-to-br ${lesson.color} opacity-0 group-hover:opacity-10 dark:group-hover:opacity-20 transition-opacity duration-300`} />
 
         {/* Completed badge */}
-        {lesson.completed && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute top-3 right-3 bg-green-500 text-white rounded-full p-1"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-          </motion.div>
-        )}
-
         <div className="flex items-start gap-3 relative z-10">
           {/* Icon */}
           <div className={`p-3 rounded-xl bg-gradient-to-br ${lesson.color} text-white flex-shrink-0`}>
@@ -142,25 +103,18 @@ const LessonsPanel = ({ onLessonSelect }) => {
 
             {/* Meta info */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getDifficultyColor(lesson.difficulty)}`}>
-                {lesson.difficulty}
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                {lesson.lesson_type === 'practice' ? 'Thực hành' : 'Tổng quan'}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {lesson.duration}
+                {lesson.module_code?.toUpperCase()}
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                {lesson.step_count} bước
               </span>
             </div>
           </div>
         </div>
-
-        {/* Progress bar (if started) */}
-        {lesson.completed && (
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: '100%' }}
-            className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-green-400 to-emerald-500"
-          />
-        )}
       </motion.div>
     )
   }
@@ -213,38 +167,37 @@ const LessonsPanel = ({ onLessonSelect }) => {
             <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-2">
               <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Hoàn thành</p>
               <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                {lessons.filter((l) => l.completed).length}/{lessons.length}
+                {lessons.length}
               </p>
             </div>
             <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-2">
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Điểm tích lũy</p>
+              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Module</p>
               <p className="text-xl font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1">
                 <Star className="w-4 h-4 fill-current" />
-                125
+                {modules.length - 1}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Difficulty Filter */}
-        <CollapsibleSection title="Lọc theo độ khó" icon={Filter} defaultOpen={true}>
+        <CollapsibleSection title="Lọc theo module" icon={Filter} defaultOpen={true}>
           <div className="flex flex-wrap gap-2">
-            {difficulties.map((difficulty) => (
+            {modules.map((module) => (
               <motion.button
-                key={difficulty.id}
-                onClick={() => setSelectedDifficulty(difficulty.id)}
+                key={module.id}
+                onClick={() => setSelectedModule(module.id)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className={`
                   px-3 py-1.5 rounded-lg text-sm font-medium transition-all
                   ${
-                    selectedDifficulty === difficulty.id
-                      ? `${difficulty.color} text-white shadow-md`
+                    selectedModule === module.id
+                      ? 'bg-blue-500 text-white shadow-md'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }
                 `}
               >
-                {difficulty.label}
+                {module.label}
               </motion.button>
             ))}
           </div>
@@ -282,7 +235,7 @@ const LessonsPanel = ({ onLessonSelect }) => {
         </div>
       </Panel>
 
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }

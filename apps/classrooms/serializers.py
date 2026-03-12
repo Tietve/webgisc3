@@ -17,7 +17,11 @@ class ClassroomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Classroom
-        fields = ('id', 'name', 'teacher', 'teacher_email', 'enrollment_code', 'student_count', 'created_at', 'updated_at')
+        fields = (
+            'id', 'name', 'teacher', 'teacher_email', 'enrollment_code',
+            'subject', 'grade_level', 'semester', 'textbook_series',
+            'module_code', 'is_published', 'student_count', 'created_at', 'updated_at'
+        )
         read_only_fields = ('id', 'enrollment_code', 'created_at', 'updated_at')
 
     def get_student_count(self, obj):
@@ -31,7 +35,10 @@ class ClassroomCreateSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Classroom
-        fields = ('id', 'name', 'enrollment_code')
+        fields = (
+            'id', 'name', 'subject', 'grade_level', 'semester',
+            'textbook_series', 'module_code', 'is_published', 'enrollment_code'
+        )
         read_only_fields = ('id', 'enrollment_code')
 
     def create(self, validated_data):
@@ -138,6 +145,8 @@ class AssignmentSerializer(serializers.ModelSerializer):
     """
     teacher_email = serializers.EmailField(source='created_by.email', read_only=True)
     submission_count = serializers.SerializerMethodField()
+    total_students = serializers.SerializerMethodField()
+    submission_status = serializers.SerializerMethodField()
     is_overdue = serializers.ReadOnlyField()
     attachment_url = serializers.SerializerMethodField()
 
@@ -146,13 +155,34 @@ class AssignmentSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'classroom', 'title', 'description', 'due_date', 'max_score',
             'attachment', 'attachment_url', 'created_by', 'teacher_email',
-            'submission_count', 'is_overdue', 'created_at', 'updated_at'
+            'resource_type', 'resource_id', 'submission_count', 'total_students',
+            'submission_status', 'is_overdue', 'created_at', 'updated_at'
         )
         read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
 
     def get_submission_count(self, obj):
         """Get number of submissions for this assignment."""
         return obj.get_submission_count()
+
+    def get_total_students(self, obj):
+        return obj.classroom.get_student_count()
+
+    def get_submission_status(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or getattr(user, 'role', None) == 'teacher':
+            return None
+
+        try:
+            submission = obj.submissions.select_related('grade').get(student=user)
+        except Submission.DoesNotExist:
+            return 'not_submitted'
+
+        if hasattr(submission, 'grade'):
+            return 'graded'
+        if submission.is_late:
+            return 'late'
+        return 'submitted'
 
     def get_attachment_url(self, obj):
         """Get full URL for attachment file."""
@@ -170,7 +200,10 @@ class AssignmentCreateSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Assignment
-        fields = ('id', 'title', 'description', 'due_date', 'max_score', 'attachment')
+        fields = (
+            'id', 'title', 'description', 'due_date', 'max_score',
+            'attachment', 'resource_type', 'resource_id'
+        )
         read_only_fields = ('id',)
 
     def validate_due_date(self, value):
@@ -198,19 +231,42 @@ class AssignmentListSerializer(serializers.ModelSerializer):
     """
     teacher_email = serializers.EmailField(source='created_by.email', read_only=True)
     submission_count = serializers.SerializerMethodField()
+    total_students = serializers.SerializerMethodField()
+    submission_status = serializers.SerializerMethodField()
     is_overdue = serializers.ReadOnlyField()
 
     class Meta:
         model = Assignment
         fields = (
             'id', 'title', 'due_date', 'max_score', 'teacher_email',
-            'submission_count', 'is_overdue', 'created_at'
+            'resource_type', 'resource_id', 'submission_count', 'total_students',
+            'submission_status', 'is_overdue', 'created_at'
         )
         read_only_fields = fields
 
     def get_submission_count(self, obj):
         """Get number of submissions."""
         return obj.get_submission_count()
+
+    def get_total_students(self, obj):
+        return obj.classroom.get_student_count()
+
+    def get_submission_status(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or getattr(user, 'role', None) == 'teacher':
+            return None
+
+        try:
+            submission = obj.submissions.select_related('grade').get(student=user)
+        except Submission.DoesNotExist:
+            return 'not_submitted'
+
+        if hasattr(submission, 'grade'):
+            return 'graded'
+        if submission.is_late:
+            return 'late'
+        return 'submitted'
 
 
 # ============================================================================
@@ -223,14 +279,20 @@ class SubmissionSerializer(serializers.ModelSerializer):
     """
     student_email = serializers.EmailField(source='student.email', read_only=True)
     assignment_title = serializers.CharField(source='assignment.title', read_only=True)
+    student_name = serializers.CharField(source='student.email', read_only=True)
     file_url = serializers.SerializerMethodField()
+    file_submission = serializers.SerializerMethodField()
     grade = serializers.SerializerMethodField()
+    score = serializers.SerializerMethodField()
+    feedback = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Submission
         fields = (
             'id', 'assignment', 'assignment_title', 'student', 'student_email',
-            'text_answer', 'file', 'file_url', 'submitted_at', 'is_late', 'grade'
+            'student_name', 'text_answer', 'file', 'file_url', 'file_submission',
+            'submitted_at', 'is_late', 'grade', 'score', 'feedback', 'status'
         )
         read_only_fields = ('id', 'student', 'submitted_at', 'is_late')
 
@@ -263,6 +325,22 @@ class SubmissionSerializer(serializers.ModelSerializer):
         except Grade.DoesNotExist:
             pass
         return None
+
+    def get_file_submission(self, obj):
+        return self.get_file_url(obj)
+
+    def get_score(self, obj):
+        grade = self.get_grade(obj)
+        return grade['score'] if grade else None
+
+    def get_feedback(self, obj):
+        grade = self.get_grade(obj)
+        return grade['feedback'] if grade else None
+
+    def get_status(self, obj):
+        if self.get_score(obj) is not None:
+            return 'graded'
+        return 'submitted'
 
 
 class SubmissionCreateSerializer(serializers.ModelSerializer):

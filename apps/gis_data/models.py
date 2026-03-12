@@ -52,6 +52,16 @@ class MapLayer(models.Model):
         null=True,
         help_text='Optional value to filter by (e.g., truong_hoc)'
     )
+    school = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='School level for curriculum grouping (e.g., THPT)'
+    )
+    grade = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text='Grade level for curriculum grouping (e.g., 10)'
+    )
     is_active = models.BooleanField(default=True, help_text='Whether the layer is active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -61,6 +71,9 @@ class MapLayer(models.Model):
         verbose_name = 'Map Layer'
         verbose_name_plural = 'Map Layers'
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['school', 'grade'], name='idx_map_layers_school_grade_orm'),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.geom_type})"

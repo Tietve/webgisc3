@@ -35,11 +35,16 @@ class QuizListSerializer(serializers.ModelSerializer):
     question_count = serializers.SerializerMethodField()
     deadline_status = serializers.CharField(read_only=True)
     deadline_color = serializers.CharField(read_only=True)
+    lesson_id = serializers.IntegerField(source='lesson.id', read_only=True)
 
     class Meta:
         model = Quiz
-        fields = ('id', 'title', 'description', 'classroom', 'question_count',
-                  'due_date', 'deadline_status', 'deadline_color', 'created_at')
+        fields = (
+            'id', 'title', 'description', 'classroom', 'lesson_id', 'subject',
+            'grade_level', 'semester', 'textbook_series', 'module_code',
+            'is_published', 'question_count', 'due_date', 'deadline_status',
+            'deadline_color', 'created_at'
+        )
         read_only_fields = fields
 
     def get_question_count(self, obj):
@@ -54,12 +59,16 @@ class QuizDetailSerializer(serializers.ModelSerializer):
     questions = QuizQuestionSerializer(many=True, read_only=True)
     deadline_status = serializers.CharField(read_only=True)
     deadline_color = serializers.CharField(read_only=True)
+    lesson_id = serializers.IntegerField(source='lesson.id', read_only=True)
 
     class Meta:
         model = Quiz
-        fields = ('id', 'title', 'description', 'questions', 'due_date',
-                  'late_submission_allowed', 'late_deadline', 'deadline_status',
-                  'deadline_color', 'created_at')
+        fields = (
+            'id', 'title', 'description', 'lesson_id', 'subject', 'grade_level',
+            'semester', 'textbook_series', 'module_code', 'is_published',
+            'questions', 'due_date', 'late_submission_allowed', 'late_deadline',
+            'deadline_status', 'deadline_color', 'created_at'
+        )
         read_only_fields = fields
 
 

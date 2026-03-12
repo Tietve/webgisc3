@@ -12,7 +12,10 @@ class MapLayerSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = MapLayer
-        fields = ('id', 'name', 'data_source_table', 'geom_type', 'description', 'is_active', 'created_at')
+        fields = (
+            'id', 'name', 'data_source_table', 'geom_type', 'description',
+            'filter_column', 'filter_value', 'school', 'grade', 'is_active', 'created_at'
+        )
         read_only_fields = ('id', 'created_at')
 
 

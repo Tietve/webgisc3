@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Users, CheckCircle, XCircle, Clock, Download, Send, Loader, AlertCircle } from 'lucide-react'
 import { assignmentService, submissionService } from '@services'
 
@@ -14,7 +14,7 @@ import { assignmentService, submissionService } from '@services'
  * - Show who hasn't submitted
  * - Bulk view of all submissions
  */
-const GradingInterface = ({ assignment, onClose }) => {
+const GradingInterface = ({ assignment }) => {
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -31,7 +31,7 @@ const GradingInterface = ({ assignment, onClose }) => {
     try {
       setLoading(true)
       setError(null)
-      const data = await assignmentService.getSubmissions(assignment.id)
+      const data = await assignmentService.getSubmissions(assignment.classroom, assignment.id)
       const submissionsList = Array.isArray(data) ? data : (data.results || [])
       setSubmissions(submissionsList)
 
@@ -87,9 +87,10 @@ const GradingInterface = ({ assignment, onClose }) => {
     }
   }
 
+  const totalStudents = assignment.total_students || submissions.length
   const submittedCount = submissions.filter(s => s.status !== 'not_submitted').length
   const gradedCount = submissions.filter(s => s.score !== null && s.score !== undefined).length
-  const notSubmittedStudents = submissions.filter(s => s.status === 'not_submitted')
+  const notSubmittedCount = Math.max(totalStudents - submittedCount, 0)
 
   const getSubmissionStatusColor = (submission) => {
     if (submission.status === 'not_submitted') {
@@ -150,7 +151,7 @@ const GradingInterface = ({ assignment, onClose }) => {
             <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-2">
               <p className="text-xs text-blue-600 dark:text-blue-400">Đã nộp</p>
               <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                {submittedCount}/{submissions.length}
+                {submittedCount}/{totalStudents}
               </p>
             </div>
             <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-2">
@@ -201,19 +202,12 @@ const GradingInterface = ({ assignment, onClose }) => {
             ))}
           </div>
 
-          {/* Not Submitted Students */}
-          {notSubmittedStudents.length > 0 && (
+          {/* Not Submitted Summary */}
+          {notSubmittedCount > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Chưa nộp ({notSubmittedStudents.length}):
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Ch?a n?p: {notSubmittedCount} h?c sinh
               </p>
-              <div className="space-y-1">
-                {notSubmittedStudents.map((student) => (
-                  <p key={student.id} className="text-xs text-gray-500 dark:text-gray-400">
-                    • {student.student_name || student.student_email}
-                  </p>
-                ))}
-              </div>
             </div>
           )}
         </div>
