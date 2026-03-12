@@ -137,7 +137,7 @@ const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
             <h2 className="text-lg font-bold">{quizData?.title || 'Quiz'}</h2>
             {!showResults && quizData?.questions?.length ? (
               <div className="mt-2 text-sm text-white/90 flex items-center justify-between gap-3">
-                <span>C?u {currentQuestion + 1}/{quizData.questions.length}</span>
+                <span>{'C\u00e2u'} {currentQuestion + 1}/{quizData.questions.length}</span>
                 {score !== null && (
                   <span className="flex items-center gap-1"><Trophy className="w-4 h-4" />{score}</span>
                 )}
@@ -149,7 +149,7 @@ const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
               </div>
             ) : null}
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="??ng quiz">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label={'\u0110\u00f3ng quiz'}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -158,13 +158,13 @@ const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Loader className="w-8 h-8 animate-spin text-blue-500 mb-3" />
-              <p className="text-gray-600 dark:text-gray-400">?ang t?i quiz...</p>
+              <p className="text-gray-600 dark:text-gray-400">{'\u0110ang t\u1ea3i quiz...'}</p>
             </div>
           ) : error ? (
             <Panel variant="floating" className="p-6 border border-red-200 dark:border-red-900">
               <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-3">
                 <AlertCircle className="w-5 h-5" />
-                <p className="font-semibold">Kh?ng t?i ???c quiz</p>
+                <p className="font-semibold">{'Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c quiz'}</p>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
             </Panel>
@@ -174,10 +174,10 @@ const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
                 <div className="w-20 h-20 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center mx-auto mb-4">
                   <Trophy className="w-10 h-10 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Ho?n th?nh quiz</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">?i?m c?a b?n</p>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{'Ho\u00e0n th\u00e0nh quiz'}</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{'\u0110i\u1ec3m c\u1ee7a b\u1ea1n'}</p>
                 <div className="text-5xl font-extrabold text-blue-600 mb-2">{score}</div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Thang ?i?m 100</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{'Thang \u0111i\u1ec3m 100'}</p>
               </Panel>
 
               <div className="flex gap-3">
@@ -185,19 +185,19 @@ const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
                   onClick={handleRestart}
                   className="flex-1 py-3 rounded-xl font-semibold bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex items-center justify-center gap-2"
                 >
-                  <RotateCcw className="w-4 h-4" /> L?m l?i
+                  <RotateCcw className="w-4 h-4" /> {'L\u00e0m l\u1ea1i'}
                 </button>
                 <button
                   onClick={onAskAi}
                   className="flex-1 py-3 rounded-xl font-semibold bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300"
                 >
-                  H?i AI gi?i th?ch
+                  {'H\u1ecfi AI gi\u1ea3i th\u00edch'}
                 </button>
                 <button
                   onClick={onClose}
                   className="flex-1 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                 >
-                  ??ng
+                  {'\u0110\u00f3ng'}
                 </button>
               </div>
             </div>
@@ -238,7 +238,7 @@ const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
                     onClick={handlePrevious}
                     className="flex-1 py-3 rounded-xl font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2"
                   >
-                    <ArrowLeft className="w-5 h-5" /> Tr??c
+                    <ArrowLeft className="w-5 h-5" /> {'Tr\u01b0\u1edbc'}
                   </button>
                 ) : null}
                 <button
@@ -251,14 +251,14 @@ const QuizPanel = ({ isOpen, onClose, quizId, onQuizSubmitted, onAskAi }) => {
                   }`}
                 >
                   {submitting ? <Loader className="w-5 h-5 animate-spin" /> : null}
-                  <span>{currentQuestion < quizData.questions.length - 1 ? 'Ti?p theo' : 'N?p b?i'}</span>
+                  <span>{currentQuestion < quizData.questions.length - 1 ? 'Ti\u1ebfp theo' : 'N\u1ed9p b\u00e0i'}</span>
                   {!submitting ? <ArrowRight className="w-5 h-5" /> : null}
                 </button>
               </div>
             </div>
           ) : (
             <Panel variant="floating" className="p-6">
-              <p className="text-gray-600 dark:text-gray-400">Quiz ch?a c? c?u h?i.</p>
+              <p className="text-gray-600 dark:text-gray-400">{'Quiz ch\u01b0a c\u00f3 c\u00e2u h\u1ecfi.'}</p>
             </Panel>
           )}
         </div>

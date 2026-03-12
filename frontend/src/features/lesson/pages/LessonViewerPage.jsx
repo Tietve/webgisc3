@@ -38,7 +38,7 @@ const LessonViewerPage = () => {
       const data = await lessonService.get(id)
       setLesson(data)
     } catch (err) {
-      setError(err.message || 'Kh?ng th? t?i b?i h?c')
+      setError(err.message || 'Kh\u00f4ng th\u1ec3 t\u1ea3i b\u00e0i h\u1ecdc')
     } finally {
       setLoading(false)
     }
@@ -183,7 +183,7 @@ const LessonViewerPage = () => {
       <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-300">?ang t?i b?i h?c...</p>
+          <p className="text-gray-300">{'\u0110ang t\u1ea3i b\u00e0i h\u1ecdc...'}</p>
         </div>
       </div>
     )
@@ -195,13 +195,13 @@ const LessonViewerPage = () => {
       <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-md text-center">
           <div className="text-red-400 text-4xl mb-4">!</div>
-          <h2 className="text-xl font-bold text-white mb-2">L?i</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{'L\u1ed7i'}</h2>
           <p className="text-gray-300 mb-6">{error}</p>
           <button
             onClick={() => navigate('/map')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Quay l?i b?n ??
+            {'Quay l\u1ea1i b\u1ea3n \u0111\u1ed3'}
           </button>
         </div>
       </div>
@@ -213,15 +213,15 @@ const LessonViewerPage = () => {
     return (
       <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-md text-center">
-          <h2 className="text-xl font-bold text-white mb-2">B?i h?c ch?a c? n?i dung</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{'B\u00e0i h\u1ecdc ch\u01b0a c\u00f3 n\u1ed9i dung'}</h2>
           <p className="text-gray-300 mb-6">
-            B?i h?c n?y ch?a ???c c?p nh?t n?i dung. Vui l?ng ch?n b?i h?c kh?c.
+            {'B\u00e0i h\u1ecdc n\u00e0y ch\u01b0a \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt n\u1ed9i dung. Vui l\u00f2ng ch\u1ecdn b\u00e0i h\u1ecdc kh\u00e1c.'}
           </p>
           <button
             onClick={() => navigate('/map')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Quay l?i b?n ??
+            {'Quay l\u1ea1i b\u1ea3n \u0111\u1ed3'}
           </button>
         </div>
       </div>
@@ -263,7 +263,7 @@ const LessonViewerPage = () => {
           <button
             onClick={() => navigate('/grade-10')}
             className="p-1.5 hover:bg-gray-700 rounded-lg transition shrink-0"
-            title="Quay l?i"
+            title={'Quay l\u1ea1i'}
           >
             <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -272,7 +272,7 @@ const LessonViewerPage = () => {
           <h1 className="text-sm font-semibold text-white truncate">{lesson.title}</h1>
         </div>
         <div className="text-xs text-gray-400 shrink-0 ml-3">
-          B??c {currentStep + 1}/{lesson.steps.length}
+          {'B\u01b0\u1edbc'} {currentStep + 1}/{lesson.steps.length}
         </div>
         <button
           onClick={() => isAiSupported && setIsAiOpen(true)}
@@ -325,7 +325,7 @@ const LessonViewerPage = () => {
 
                 {relatedLayers.length > 0 && (
                   <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Layer quan sát chính</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{'Layer quan s\u00e1t ch\u00ednh'}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {relatedLayers.map((layer) => (
                         <span key={layer.id} className="rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1 text-xs text-slate-200">
@@ -336,8 +336,8 @@ const LessonViewerPage = () => {
                   </div>
                 )}
 
-                <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4 md:p-5 shadow-inner">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Nhiệm vụ quan sát</p>
+                <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4 md:p-5 shadow-inner text-slate-100">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">{'Nhi\u1ec7m v\u1ee5 quan s\u00e1t'}</p>
                   <div
                     className="prose prose-invert prose-sm max-w-none
                     prose-headings:text-white prose-headings:font-bold
@@ -377,7 +377,7 @@ const LessonViewerPage = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Tr??c
+                {'Tr\u01b0\u1edbc'}
               </button>
 
               {isLastStep ? (
@@ -388,14 +388,14 @@ const LessonViewerPage = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Ho?n th?nh
+                  {'Ho\u00e0n th\u00e0nh'}
                 </button>
               ) : (
                 <button
                   onClick={nextStep}
                   className="px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition flex items-center gap-1.5"
                 >
-                  Ti?p theo
+                  {'Ti\u1ebfp theo'}
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -409,8 +409,7 @@ const LessonViewerPage = () => {
       <AITutorPanel
         isOpen={isAiOpen}
         onClose={() => setIsAiOpen(false)}
-        context={aiContext}
-        title="AI Tutor theo b?i h?c"
+        title={'AI Tutor theo b\u00e0i h\u1ecdc'}
       />
     </div>
   )
