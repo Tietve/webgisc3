@@ -1,10 +1,10 @@
 ﻿import api from './api'
-import { AI_TUTOR_ENDPOINTS } from '@constants/api.constants'
 
-const endpoints = AI_TUTOR_ENDPOINTS
-
-if (!endpoints?.RESPOND || !endpoints?.CONVERSATIONS) {
-  throw new Error('AI Tutor endpoints chưa được cấu hình đúng trong frontend constants')
+const endpoints = {
+  RESPOND: '/ai-tutor/respond/',
+  CONVERSATIONS: '/ai-tutor/conversations/',
+  CONVERSATION_DETAIL: (id) => `/ai-tutor/conversations/${id}/`,
+  FEEDBACK: (id) => `/ai-tutor/messages/${id}/feedback/`,
 }
 
 const aiTutorService = {
@@ -33,4 +33,3 @@ const aiTutorService = {
 }
 
 export default aiTutorService
-
