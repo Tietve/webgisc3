@@ -256,29 +256,29 @@ const LessonViewerPage = () => {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-gray-900">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-slate-100">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-4 py-2.5 flex items-center justify-between shrink-0 z-10">
+      <div className="border-b border-slate-200 bg-white/95 px-4 py-3 flex items-center justify-between shrink-0 z-10 backdrop-blur">
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => navigate('/grade-10')}
-            className="p-1.5 hover:bg-gray-700 rounded-lg transition shrink-0"
+            className="shrink-0 rounded-lg p-1.5 transition hover:bg-slate-100"
             title={'Quay l\u1ea1i'}
           >
-            <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <h1 className="text-sm font-semibold text-white truncate">{lesson.title}</h1>
+          <h1 className="text-sm font-semibold text-slate-900 truncate">{lesson.title}</h1>
         </div>
-        <div className="text-xs text-gray-400 shrink-0 ml-3">
+        <div className="ml-3 shrink-0 text-xs text-slate-500">
           {'B\u01b0\u1edbc'} {currentStep + 1}/{lesson.steps.length}
         </div>
         <button
           onClick={() => isAiSupported && setIsAiOpen(true)}
           disabled={!isAiSupported}
           className={`ml-3 px-3 py-1.5 text-xs font-semibold rounded-full transition ${
-            isAiSupported ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+            isAiSupported ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm' : 'bg-slate-200 text-slate-500 cursor-not-allowed'
           }`}
         >
           AI Tutor
@@ -298,7 +298,7 @@ const LessonViewerPage = () => {
         </div>
 
         {/* Content panel (right / bottom on mobile) */}
-        <div className="lg:w-[35%] w-full flex-1 lg:flex-none lg:h-full flex flex-col bg-slate-900 border-l border-slate-700">
+        <div className="lg:w-[35%] w-full flex-1 lg:flex-none lg:h-full flex flex-col border-l border-slate-200 bg-gradient-to-b from-white to-slate-50">
           {/* Scrollable step content */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <AnimatePresence mode="wait">
@@ -308,27 +308,27 @@ const LessonViewerPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="p-5 md:p-6 space-y-4"
+                className="p-5 md:p-6 space-y-4 text-slate-800"
               >
-                <div className="rounded-2xl border border-slate-700 bg-slate-800/80 p-4 shadow-lg">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">Bước {currentStep + 1}</p>
-                      <h2 className="mt-1 text-lg font-semibold text-white">{lesson.lesson_type === 'practice' ? 'Thực hành với WebGIS' : 'Khám phá kiến thức cốt lõi'}</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Bước {currentStep + 1}</p>
+                      <h2 className="mt-1 text-lg font-semibold text-slate-900">{lesson.lesson_type === 'practice' ? 'Thực hành với WebGIS' : 'Khám phá kiến thức cốt lõi'}</h2>
                     </div>
-                    <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-200">
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200">
                       {lesson.module_code}
                     </span>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">{lesson.description}</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-700">{lesson.description}</p>
                 </div>
 
                 {relatedLayers.length > 0 && (
-                  <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{'Layer quan s\u00e1t ch\u00ednh'}</p>
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{'Layer quan s\u00e1t ch\u00ednh'}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {relatedLayers.map((layer) => (
-                        <span key={layer.id} className="rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1 text-xs text-slate-200">
+                        <span key={layer.id} className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs text-emerald-800">
                           {layer.name}
                         </span>
                       ))}
@@ -336,18 +336,18 @@ const LessonViewerPage = () => {
                   </div>
                 )}
 
-                <div className="rounded-2xl border border-slate-700 bg-slate-950/60 p-4 md:p-5 shadow-inner text-slate-100">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">{'Nhi\u1ec7m v\u1ee5 quan s\u00e1t'}</p>
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 md:p-5 shadow-sm text-slate-800">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">{'Nhi\u1ec7m v\u1ee5 quan s\u00e1t'}</p>
                   <div
                     className="prose prose-invert prose-sm max-w-none
-                    prose-headings:text-white prose-headings:font-bold
+                    prose-headings:text-slate-900 prose-headings:font-bold
                     prose-h1:text-2xl prose-h1:mb-3 prose-h1:mt-0
                     prose-h2:text-xl prose-h2:mb-2
                     prose-h3:text-lg prose-h3:mb-2
-                    prose-p:text-gray-300 prose-p:leading-relaxed
-                    prose-strong:text-blue-400
-                    prose-li:text-gray-300
-                    prose-em:text-gray-200"
+                    prose-p:text-slate-700 prose-p:leading-relaxed
+                    prose-strong:text-blue-700
+                    prose-li:text-slate-700
+                    prose-em:text-slate-600"
                   dangerouslySetInnerHTML={{ __html: formatMarkdown(step.popup_text) }}
                 />
                 </div>
@@ -356,9 +356,9 @@ const LessonViewerPage = () => {
           </div>
 
           {/* Bottom navigation */}
-          <div className="shrink-0 border-t border-gray-700 p-3 space-y-2.5">
+          <div className="shrink-0 border-t border-slate-200 bg-white/90 p-3 space-y-2.5">
             {/* Progress bar */}
-            <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
                 initial={{ width: 0 }}
@@ -372,7 +372,7 @@ const LessonViewerPage = () => {
               <button
                 onClick={prevStep}
                 disabled={currentStep === 0}
-                className="px-4 py-2 text-sm bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -409,6 +409,7 @@ const LessonViewerPage = () => {
       <AITutorPanel
         isOpen={isAiOpen}
         onClose={() => setIsAiOpen(false)}
+        context={aiContext}
         title={'AI Tutor theo b\u00e0i h\u1ecdc'}
       />
     </div>

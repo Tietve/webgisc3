@@ -9,7 +9,8 @@ export const storage = {
   get(key) {
     try {
       const item = localStorage.getItem(key)
-      return item ? JSON.parse(item) : null
+      if (!item || item === 'undefined' || item === 'null') return null
+      return JSON.parse(item)
     } catch (error) {
       console.error(`Error getting ${key} from localStorage:`, error)
       return null
