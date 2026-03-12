@@ -85,6 +85,20 @@ const MapViewerPage = () => {
     return ids
   }, [moduleLessons])
 
+  const activeModuleCode = searchParams.get('module') || moduleLessons[0]?.module_code || ''
+  const activeModuleMeta = useMemo(() => getModuleCatalog(activeModuleCode), [activeModuleCode])
+
+  const coreLayerIds = useMemo(() => {
+    if (!activeModuleMeta) return []
+    const selected = []
+    layers.forEach((layer) => {
+      if (matchLayerGuide(activeModuleCode, layer.name)) {
+        selected.push(layer.id)
+      }
+    })
+    return selected
+  }, [activeModuleCode, activeModuleMeta, layers])
+
   useEffect(() => {
     if (!isStudentView || curatedLayerIds.size === 0) return
     setLayers((current) => current.filter((layer) => curatedLayerIds.has(layer.id)))
@@ -363,15 +377,16 @@ const MapViewerPage = () => {
     if (!isStudentView || hasAutoEnabledLayers || layers.length === 0) return
 
     const autoEnable = async () => {
-      for (const layer of layers.slice(0, 4)) {
+      const targetLayerIds = coreLayerIds.length > 0 ? coreLayerIds : layers.slice(0, 4).map((layer) => layer.id)
+      for (const layerId of targetLayerIds.slice(0, 5)) {
         // eslint-disable-next-line no-await-in-loop
-        await toggleLayer(layer.id, true)
+        await toggleLayer(layerId, true)
       }
       setHasAutoEnabledLayers(true)
     }
 
     autoEnable().catch((error) => console.error('Failed to auto-enable student layers:', error))
-  }, [isStudentView, hasAutoEnabledLayers, layers])
+  }, [isStudentView, hasAutoEnabledLayers, layers, coreLayerIds])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900">

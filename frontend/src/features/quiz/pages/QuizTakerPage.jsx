@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { quizService } from '@services'
 import { ROUTES } from '@constants'
+import { getModuleCatalog } from '@features/grade10/data/moduleCatalog'
 
 const QuizTakerPage = () => {
   const { id } = useParams()
@@ -17,6 +18,8 @@ const QuizTakerPage = () => {
       .catch((error) => console.error('Failed to load quiz:', error))
       .finally(() => setLoading(false))
   }, [id])
+
+  const moduleMeta = useMemo(() => getModuleCatalog(quiz?.module_code), [quiz])
 
   const answeredCount = useMemo(() => {
     if (!quiz?.questions) return 0
@@ -38,23 +41,23 @@ const QuizTakerPage = () => {
     setSubmitted(result)
   }
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-800">?ang t?i quiz...</div>
-  if (!quiz) return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-800">Kh?ng t?m th?y quiz.</div>
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-800">Đang tải quiz...</div>
+  if (!quiz) return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-800">Không tìm thấy quiz.</div>
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div className="rounded-[2rem] bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 p-6 text-white shadow-xl">
           <button onClick={() => navigate(ROUTES.GRADE_10)} className="mb-4 text-sm text-blue-100 hover:text-white">
-            ? Quay l?i hub l?p 10
+            ← Quay lại hub lớp 10
           </button>
           <p className="text-xs uppercase tracking-[0.25em] text-blue-100">{quiz.module_code}</p>
           <h1 className="mt-2 text-3xl font-black leading-tight">{quiz.title}</h1>
           <p className="mt-2 max-w-3xl text-blue-50/90">{quiz.description}</p>
           <div className="mt-5 rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between text-sm text-blue-50">
-              <span>Ti?n ?? l?m b?i</span>
-              <span>{answeredCount}/{quiz.questions.length} c?u</span>
+              <span>Tiến độ làm bài</span>
+              <span>{answeredCount}/{quiz.questions.length} câu</span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20">
               <div className="h-full rounded-full bg-white" style={{ width: `${progress}%` }} />
@@ -62,10 +65,36 @@ const QuizTakerPage = () => {
           </div>
         </div>
 
+        {moduleMeta && (
+          <div className="rounded-3xl border border-sky-100 bg-white p-5 shadow-sm">
+            <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Ôn nhanh trước khi nộp</p>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{moduleMeta.summary}</p>
+                <ul className="mt-4 space-y-2 text-sm text-slate-700">
+                  {moduleMeta.quizReview.map((item) => (
+                    <li key={item}>• {item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Kiến thức cốt lõi</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {moduleMeta.keyConcepts.map((concept) => (
+                    <span key={concept} className="rounded-full bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
+                      {concept}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {submitted && (
           <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-            <p className="text-sm font-medium text-emerald-700">N?p b?i th?nh c?ng</p>
-            <p className="mt-1 text-3xl font-black text-emerald-900">?i?m: {submitted.score}</p>
+            <p className="text-sm font-medium text-emerald-700">Nộp bài thành công</p>
+            <p className="mt-1 text-3xl font-black text-emerald-900">Điểm: {submitted.score}</p>
           </div>
         )}
 
@@ -73,11 +102,11 @@ const QuizTakerPage = () => {
           <div key={question.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-blue-600">C?u {index + 1}</p>
+                <p className="text-sm font-semibold text-blue-600">Câu {index + 1}</p>
                 <h2 className="mt-2 text-lg font-semibold leading-7 text-slate-900">{question.question_text}</h2>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                {answers[String(question.id)] ? '?? ch?n' : 'Ch?a tr? l?i'}
+                {answers[String(question.id)] ? 'Đã chọn' : 'Chưa trả lời'}
               </span>
             </div>
             <div className="mt-4 space-y-3">
@@ -86,11 +115,7 @@ const QuizTakerPage = () => {
                 return (
                   <label
                     key={answer.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition ${
-                      checked
-                        ? 'border-blue-300 bg-blue-50 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
-                    }`}
+                    className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition ${checked ? 'border-blue-300 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'}`}
                   >
                     <input
                       type="radio"
@@ -111,14 +136,14 @@ const QuizTakerPage = () => {
             onClick={() => navigate(`${ROUTES.MAP}?grade=10&semester=1&textbook=canh-dieu&studentView=1`)}
             className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700"
           >
-            M? map l?p 10
+            Mở map lớp 10
           </button>
           <button
             disabled={!isComplete}
             onClick={handleSubmit}
             className="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
           >
-            N?p quiz
+            Nộp quiz
           </button>
         </div>
       </div>

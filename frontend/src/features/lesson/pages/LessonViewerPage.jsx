@@ -310,47 +310,74 @@ const LessonViewerPage = () => {
                 transition={{ duration: 0.25 }}
                 className="p-5 md:p-6 space-y-4 text-slate-800"
               >
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
+                <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Bước {currentStep + 1}</p>
                       <h2 className="mt-1 text-lg font-semibold text-slate-900">{lesson.lesson_type === 'practice' ? 'Thực hành với WebGIS' : 'Khám phá kiến thức cốt lõi'}</h2>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200">
+                    <span className="rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-medium text-blue-700">
                       {lesson.module_code}
                     </span>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-700">{lesson.description}</p>
                 </div>
 
-                {relatedLayers.length > 0 && (
+                {moduleMeta && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Mục tiêu học nhanh</p>
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                        {moduleMeta.learningGoals.map((goal) => (
+                          <li key={goal}>• {goal}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Khái niệm cốt lõi</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {moduleMeta.keyConcepts.map((concept) => (
+                          <span key={concept} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
+                            {concept}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {guidedLayers.length > 0 && (
                   <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{'Layer quan s\u00e1t ch\u00ednh'}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {relatedLayers.map((layer) => (
-                        <span key={layer.id} className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs text-emerald-800">
-                          {layer.name}
-                        </span>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Layer quan sát chính</p>
+                    <div className="mt-3 space-y-3">
+                      {guidedLayers.map((layer) => (
+                        <div key={layer.id} className="rounded-2xl bg-white px-3 py-3 shadow-sm">
+                          <p className="text-sm font-semibold text-emerald-900">{layer.name}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-600">{layer.guide?.purpose || layer.description || 'Dùng để quan sát mối liên hệ với nội dung bài học.'}</p>
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
 
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 md:p-5 shadow-sm text-slate-800">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">{'Nhi\u1ec7m v\u1ee5 quan s\u00e1t'}</p>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Nhiệm vụ quan sát</p>
                   <div
-                    className="prose prose-invert prose-sm max-w-none
-                    prose-headings:text-slate-900 prose-headings:font-bold
-                    prose-h1:text-2xl prose-h1:mb-3 prose-h1:mt-0
-                    prose-h2:text-xl prose-h2:mb-2
-                    prose-h3:text-lg prose-h3:mb-2
-                    prose-p:text-slate-700 prose-p:leading-relaxed
-                    prose-strong:text-blue-700
-                    prose-li:text-slate-700
-                    prose-em:text-slate-600"
-                  dangerouslySetInnerHTML={{ __html: formatMarkdown(step.popup_text) }}
-                />
+                    className="prose prose-sm max-w-none prose-headings:text-slate-900 prose-headings:font-bold prose-h1:text-2xl prose-h1:mb-3 prose-h1:mt-0 prose-h2:text-xl prose-h2:mb-2 prose-h3:text-lg prose-h3:mb-2 prose-p:text-slate-700 prose-p:leading-relaxed prose-strong:text-blue-700 prose-li:text-slate-700 prose-em:text-slate-600"
+                    dangerouslySetInnerHTML={{ __html: formatMarkdown(step.popup_text) }}
+                  />
                 </div>
+
+                {moduleMeta && (
+                  <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-700">Câu hỏi tự kiểm tra</p>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                      {moduleMeta.observationChecklist.map((item) => (
+                        <li key={item}>• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
