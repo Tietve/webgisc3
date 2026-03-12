@@ -11,7 +11,6 @@ import LessonsPanel from '@components/map/LessonsPanel'
 import QuizFloatingButton from '@components/map/QuizFloatingButton'
 import QuizPanel from '@components/map/QuizPanel'
 import DeadlineWidget from '@components/map/DeadlineWidget'
-import AITutorPanel from '@components/ai/AITutorPanel'
 import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
 import quizService from '@services/quiz.service'
@@ -105,6 +104,7 @@ const MapViewerPage = () => {
     if (mapRef.current) {
       mapRef.current.toggleStyle(!isDarkMode)
       setIsDarkMode(!isDarkMode)
+      setSelectedFeature(null)
 
       // Re-add all enabled layers after style change (Mapbox removes them on style switch)
       const map = mapRef.current.getMap()
@@ -298,6 +298,7 @@ const MapViewerPage = () => {
       }
     } else {
       newEnabledLayers.delete(layerId)
+      setSelectedFeature((current) => (current?.layer_id === layerId ? null : current))
 
       // Clean up cached data
       delete loadedGeoJSONRef.current[layerId]
@@ -329,20 +330,6 @@ const MapViewerPage = () => {
     }
   }
 
-  const aiContext = {
-    lesson_id: searchParams.get('lesson') ? Number(searchParams.get('lesson')) : undefined,
-    quiz_id: activeQuizId ? Number(activeQuizId) : undefined,
-    classroom_id: searchParams.get('classroom') ? Number(searchParams.get('classroom')) : undefined,
-    lesson_step: undefined,
-    active_layers: Array.from(enabledLayers),
-    selected_feature: selectedFeature || undefined,
-    map_state: getMapState(),
-    question_context: quizQuestionContext,
-    grade_level: searchParams.get('grade') || '10',
-    semester: searchParams.get('semester') || '1',
-    textbook_series: searchParams.get('textbook') || 'canh-dieu',
-    module_code: searchParams.get('module') || '',
-  }
 
 
   useEffect(() => {
@@ -459,9 +446,7 @@ const MapViewerPage = () => {
           onQuizSubmitted={(payload) => {
             setQuizQuestionContext(payload.question_results || [])
           }}
-          onAskAi={() => {
-            setActivePanel('ai')
-          }}
+          onAskAi={() => {}}
         />
       </div>
     </div>
