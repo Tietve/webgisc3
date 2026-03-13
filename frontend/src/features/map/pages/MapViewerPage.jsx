@@ -1,16 +1,15 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useAuth } from '@hooks/useAuth'
-import { MAP_CONFIG } from '@constants/map.constants'
-import { ROUTES } from '@constants/routes.constants'
+import { useAuth } from '@hooks'
+import { MAP_CONFIG } from '@constants'
+import { ROUTES } from '@constants/routes'
 import CollapsibleSidebar from '@components/layout/CollapsibleSidebar'
 import MapboxMap from '@components/map/MapboxMap'
 import MapTopToolbar from '@components/map/MapTopToolbar'
 import LayersPanel from '@components/map/LayersPanel'
-import LessonsPanel from '@components/lesson/LessonsPanel'
-import QuizPanel from '@components/quiz/QuizPanel'
-import DetailPanel from '@components/common/DetailPanel'
-import DeadlineWidget from '@components/classroom/DeadlineWidget'
+import LessonsPanel from '@components/map/LessonsPanel'
+import QuizPanel from '@components/map/QuizPanel'
+import DeadlineWidget from '@components/map/DeadlineWidget'
 import AITutorPanel from '@components/ai/AITutorPanel'
 import AssignmentList from '@components/classroom/AssignmentList'
 import gisService from '@services/gis.service'
@@ -18,6 +17,35 @@ import quizService from '@services/quiz.service'
 import lessonService from '@services/lesson.service'
 import { getModuleCatalog, matchLayerGuide } from '@features/grade10/data/moduleCatalog'
 import { buildFeaturePopupHTML, getFeatureAnchor, getFeatureBounds, getFeatureDisplayName, getLayerVisualSpec, getLegendVisualMeta } from '@features/map/utils/layerPresentation'
+
+
+const normalizeSearchText = (value = '') => value
+  .toString()
+  .normalize('NFD')
+  .replace(/[̀-ͯ]/g, '')
+  .replace(/[??]/g, 'd')
+  .toLowerCase()
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const escapeHtml = (value = '') => value
+  .toString()
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;')
+
+const buildAiAgentPopup = ({ title, description }) => {
+  const safeTitle = escapeHtml(title || 'V? tr? tr?n b?n ??')
+  const safeDescription = escapeHtml(description || 'AI ?ang gi?p em ??nh v? nhanh tr?n b?n ??.')
+  return `
+    <div class="space-y-2">
+      <div class="text-sm font-semibold text-slate-900">?? ${safeTitle}</div>
+      <div class="text-xs leading-5 text-slate-600">${safeDescription}</div>
+    </div>
+  `
+}
 
 const MapViewerPage = () => {
   const { user, logout } = useAuth()
@@ -286,6 +314,80 @@ const MapViewerPage = () => {
     setEnabledLayers(newEnabledLayers)
   }
 
+
+  const findLayerByKeyword = (keyword = '') => {
+    const normalizedKeyword = normalizeSearchText(keyword)
+    if (!normalizedKeyword) return null
+
+    const directMatch = layers.find((layer) => {
+      const normalizedLayerName = normalizeSearchText(layer.name)
+      return normalizedLayerName.includes(normalizedKeyword) || normalizedKeyword.includes(normalizedLayerName)
+    })
+    if (directMatch) return directMatch
+
+    const guidedLayer = activeModuleMeta?.essentialLayers?.find((item) => {
+      const candidates = [item.keyword, item.label, ...(item.aliases || [])]
+      return candidates.some((candidate) => {
+        const normalizedCandidate = normalizeSearchText(candidate)
+        return normalizedCandidate.includes(normalizedKeyword) || normalizedKeyword.includes(normalizedCandidate)
+      })
+    })
+
+    if (!guidedLayer) return null
+
+    return layers.find((layer) => {
+      const matchedGuide = matchLayerGuide(activeModuleCode, layer.name)
+      return matchedGuide?.keyword === guidedLayer.keyword
+    }) || null
+  }
+
+  const executeMapActions = async (actions = []) => {
+    if (!mapRef.current || !Array.isArray(actions)) return
+
+    const nextEnabledLayerIds = new Set(enabledLayers)
+
+    for (const action of actions.slice(0, 5)) {
+      if (!action || typeof action !== 'object') continue
+
+      if (action.type === 'fly_to_place') {
+        const coordinates = Array.isArray(action.coordinates) ? action.coordinates : null
+        if (coordinates?.length === 2 && coordinates.every((value) => Number.isFinite(Number(value)))) {
+          mapRef.current.flyTo(coordinates.map(Number), Number(action.zoom) || 4)
+        }
+        continue
+      }
+
+      if (action.type === 'toggle_layer_by_keyword') {
+        const matchedLayer = findLayerByKeyword(action.keyword)
+        if (matchedLayer) {
+          const shouldEnable = action.visible !== false
+          if (shouldEnable) nextEnabledLayerIds.add(matchedLayer.id)
+          else nextEnabledLayerIds.delete(matchedLayer.id)
+          await toggleLayer(matchedLayer.id, shouldEnable, { fitBounds: false })
+        }
+        continue
+      }
+
+      if (action.type === 'fit_active_layers') {
+        fitMapToLayerIds(Array.from(nextEnabledLayerIds))
+        continue
+      }
+
+      if (action.type === 'open_popup') {
+        const coordinates = Array.isArray(action.coordinates) ? action.coordinates : null
+        if (coordinates?.length === 2 && coordinates.every((value) => Number.isFinite(Number(value)))) {
+          mapRef.current.showPopup(coordinates.map(Number), buildAiAgentPopup(action))
+        }
+      }
+    }
+  }
+
+  const handleAiAssistantResponse = (response) => {
+    executeMapActions(response?.map_actions || []).catch((error) => {
+      console.error('Failed to execute AI map actions:', error)
+    })
+  }
+
   const getMapState = () => {
     const map = mapRef.current?.getMap?.()
     if (!map) return null
@@ -409,7 +511,10 @@ const MapViewerPage = () => {
         {activePanel === 'lessons' && (
           <LessonsPanel
             lessons={moduleLessons}
-            onOpenLesson={(lessonId) => navigate(`/lesson/${lessonId}`)}
+            filters={lessonFilters}
+            studentView={isStudentView}
+            moduleCode={activeModuleCode}
+            onLessonSelect={(lessonId) => navigate(ROUTES.LESSON.replace(':id', lessonId))}
           />
         )}
 
@@ -432,27 +537,41 @@ const MapViewerPage = () => {
         )}
 
         {selectedFeature && (
-          <DetailPanel
-            title={getFeatureDisplayName(selectedFeature.properties)}
-            subtitle={selectedFeature.layer_name}
-            description={selectedFeature.properties?.description || 'Quan sát ký hiệu, vị trí và mối liên hệ của đối tượng này với nội dung bài học.'}
-            badges={[
-              selectedFeature.geometry_type,
-              selectedFeature.properties?.category,
-            ].filter(Boolean)}
-            fields={Object.entries(selectedFeature.properties || {})
-              .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '')
-              .slice(0, 6)
-              .map(([key, value]) => ({ label: key, value }))}
-            onClose={() => setSelectedFeature(null)}
-          />
+          <div className="absolute bottom-24 right-6 z-20 w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">??i t??ng ?ang ch?n</p>
+                <h3 className="mt-1 text-sm font-semibold text-slate-900">{getFeatureDisplayName(selectedFeature.properties)}</h3>
+                <p className="mt-1 text-xs text-slate-500">{selectedFeature.layer_name || `Layer ${selectedFeature.layer_id}`}</p>
+              </div>
+              <button onClick={() => setSelectedFeature(null)} className="text-xs font-medium text-slate-500 hover:text-slate-700">??ng</button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-medium text-slate-600">
+              {[selectedFeature.geometry_type, selectedFeature.properties?.category].filter(Boolean).map((badge) => (
+                <span key={badge} className="rounded-full bg-slate-100 px-2.5 py-1">{badge}</span>
+              ))}
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{selectedFeature.properties?.description || 'Quan s?t k? hi?u, v? tr? v? m?i li?n h? c?a ??i t??ng n?y v?i n?i dung b?i h?c.'}</p>
+            <div className="mt-3 space-y-2">
+              {Object.entries(selectedFeature.properties || {})
+                .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '')
+                .slice(0, 6)
+                .map(([key, value]) => (
+                  <div key={key} className="flex items-start justify-between gap-4 rounded-xl bg-slate-50 px-3 py-2">
+                    <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{key}</span>
+                    <span className="text-right text-sm text-slate-700">{String(value)}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
         )}
       </div>
 
       <AITutorPanel
-        isOpen={activePanel === 'aiTutor'}
+        isOpen={activePanel === 'ai'}
         onClose={() => setActivePanel(null)}
         context={aiContext}
+        onAssistantResponse={handleAiAssistantResponse}
       />
     </div>
   )
